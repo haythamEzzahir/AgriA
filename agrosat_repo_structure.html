@@ -1,0 +1,213 @@
+
+<h2 class="sr-only">AgroSat repository structure — interactive file tree explorer</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-mono);font-size:13px}
+.tree{padding:1rem 0}
+.node{display:flex;flex-direction:column}
+.row{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;cursor:pointer;transition:background .12s;user-select:none}
+.row:hover{background:var(--color-background-secondary)}
+.row.active{background:var(--color-background-secondary)}
+.indent{display:flex;flex-direction:column}
+.toggle{width:14px;height:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--color-text-tertiary);font-size:11px;transition:transform .15s}
+.toggle.open{transform:rotate(90deg)}
+.toggle.leaf{opacity:0}
+.icon{font-size:15px;flex-shrink:0}
+.name{color:var(--color-text-primary);font-size:13px;font-weight:400}
+.name.folder{font-weight:500}
+.badge{font-size:10px;padding:1px 7px;border-radius:20px;font-family:var(--font-sans);margin-left:4px}
+.badge.red{background:var(--color-background-danger);color:var(--color-text-danger)}
+.badge.green{background:var(--color-background-success);color:var(--color-text-success)}
+.badge.blue{background:var(--color-background-info);color:var(--color-text-info)}
+.badge.amber{background:var(--color-background-warning);color:var(--color-text-warning)}
+.desc{font-size:12px;color:var(--color-text-secondary);margin-left:auto;padding-right:4px;font-family:var(--font-sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.children{padding-left:22px;border-left:1px solid var(--color-border-tertiary);margin-left:14px}
+.detail-panel{margin:1rem 0 .5rem;background:var(--color-background-secondary);border-radius:10px;border:0.5px solid var(--color-border-tertiary);padding:1rem 1.25rem;font-family:var(--font-sans)}
+.detail-panel h3{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:.5rem;display:flex;align-items:center;gap:8px}
+.detail-panel p{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:.5rem}
+.detail-panel .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:.5rem}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+.header{display:flex;align-items:center;gap:10px;padding:.75rem 1rem;background:var(--color-background-secondary);border-radius:10px;margin-bottom:.75rem;border:0.5px solid var(--color-border-tertiary)}
+.header .repo-name{font-size:15px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-sans)}
+.header .repo-sub{font-size:12px;color:var(--color-text-secondary);font-family:var(--font-sans)}
+.chips{display:flex;gap:6px;margin-left:auto}
+</style>
+
+<div class="header">
+  <i class="ti ti-satellite" style="font-size:22px;color:var(--color-text-info)" aria-hidden="true"></i>
+  <div>
+    <div class="repo-name">agrosat</div>
+    <div class="repo-sub">Satellite irrigation AI for Moroccan farmers</div>
+  </div>
+  <div class="chips">
+    <span class="badge green">MIT</span>
+    <span class="badge blue">Python 3.11</span>
+    <span class="badge blue">React 18</span>
+  </div>
+</div>
+
+<div id="tree" class="tree"></div>
+<div id="detail" class="detail-panel" style="display:none"></div>
+
+<script>
+const data = {
+  name:"agrosat/",type:"root",icon:"ti-folder",children:[
+    {name:"backend/",type:"folder",icon:"ti-server",badge:{text:"Python",color:"blue"},desc:"FastAPI backend",detail:{title:"Backend — Python FastAPI",desc:"Core Python backend handling satellite data ingestion, index computation, Claude AI integration, and REST API endpoints. Entry point is app/main.py.",tags:["Python 3.11","FastAPI","MongoDB","Claude API"]},children:[
+      {name:"app/",type:"folder",icon:"ti-folder",children:[
+        {name:"main.py",type:"file",icon:"ti-brand-python",badge:{text:"entry",color:"green"},desc:"FastAPI entry point",detail:{title:"main.py — FastAPI entry point",desc:"Initializes the FastAPI app, registers routers, sets up CORS, and configures MongoDB connection on startup.",tags:["FastAPI","CORS","startup event"]}},
+        {name:"api/",type:"folder",icon:"ti-folder",desc:"REST endpoints",children:[
+          {name:"farm.py",type:"file",icon:"ti-brand-python",desc:"/api/farm endpoints",detail:{title:"farm.py",desc:"GET /api/farm/{id}/analyze — triggers satellite pipeline and returns zone analysis JSON. GET /api/farm/{id}/history — returns 30-day NDVI/NDMI trends.",tags:["NDVI","NDMI","zones","GET"]}},
+          {name:"advice.py",type:"file",icon:"ti-brand-python",badge:{text:"AI",color:"amber"},desc:"Claude API advice",detail:{title:"advice.py — Claude API advisor",desc:"Calls Claude API with zone indices + weather forecast + crop type to generate natural language irrigation advice in French or Darija.",tags:["Claude API","French","Darija","irrigation"]}},
+          {name:"alerts.py",type:"file",icon:"ti-brand-python",desc:"Alert endpoints",detail:{title:"alerts.py",desc:"Manages alert subscriptions and history. Sends critical drought or rain alerts via email (Resend.com).",tags:["alerts","email","Resend"]}},
+        ]},
+        {name:"satellite/",type:"folder",icon:"ti-satellite",badge:{text:"core",color:"blue"},desc:"Satellite pipelines",children:[
+          {name:"sentinel2.py",type:"file",icon:"ti-brand-python",badge:{text:"optical",color:"green"},desc:"Sentinel-2 pipeline",detail:{title:"sentinel2.py — Optical satellite",desc:"Downloads Sentinel-2 bands (B4, B8, B11, B5) from Copernicus Data Space API. Handles cloud masking and band extraction.",tags:["Sentinel-2","NDVI","NDMI","Copernicus"]}},
+          {name:"sentinel1_sar.py",type:"file",icon:"ti-brand-python",badge:{text:"radar",color:"amber"},desc:"SAR radar pipeline",detail:{title:"sentinel1_sar.py — SAR Radar",desc:"Downloads Sentinel-1 GRD SAR data (VV + VH polarizations). Works through clouds 365 days/year. Converts dB to linear backscatter for moisture computation.",tags:["Sentinel-1","SAR","VV","VH","radar"]}},
+          {name:"indices.py",type:"file",icon:"ti-brand-python",badge:{text:"math",color:"blue"},desc:"NDVI NDMI NDRE SAR",detail:{title:"indices.py — All 4 indices",desc:"Computes NDVI (vegetation health), NDMI (water content → irrigation trigger), NDRE (nitrogen stress, early warning), and SAR moisture proxy (VV-VH)/(VV+VH).",tags:["NDVI","NDMI","NDRE","SAR moisture","numpy"]}},
+          {name:"fusion.py",type:"file",icon:"ti-brand-python",desc:"Optical + SAR fusion",detail:{title:"fusion.py — Data fusion",desc:"Merges optical and SAR data intelligently. If cloud cover > 30%, SAR becomes primary source. Outputs unified zone moisture with confidence score.",tags:["fusion","cloud cover","confidence"]}},
+          {name:"cloudy_strategy.py",type:"file",icon:"ti-brand-python",badge:{text:"key",color:"red"},desc:"4-level cloud fallback",detail:{title:"cloudy_strategy.py — Cloud coverage strategy",desc:"Implements 4 priority levels: 1) Optical (clear sky), 2) SAR radar (all weather), 3) SAR + aged optical fusion, 4) Water balance model (ET0 + rain). Guarantees zero data gaps.",tags:["clouds","SAR","ET0","water balance","365 days"]}},
+        ]},
+        {name:"ai/",type:"folder",icon:"ti-robot",badge:{text:"AI",color:"amber"},desc:"Claude + ML logic",children:[
+          {name:"claude_advisor.py",type:"file",icon:"ti-brand-python",desc:"Claude API wrapper",detail:{title:"claude_advisor.py",desc:"Wraps Claude API calls with structured prompts. Includes 24h response caching. System prompt defines an expert Moroccan agronomist persona in French/Darija.",tags:["Claude API","cache","prompts"]}},
+          {name:"anomaly_detector.py",type:"file",icon:"ti-brand-python",desc:"Isolation Forest alerts",detail:{title:"anomaly_detector.py",desc:"Trains Isolation Forest on farm's historical satellite data. Flags unusual patterns (disease onset, pest stress) before any threshold is crossed.",tags:["scikit-learn","Isolation Forest","anomaly"]}},
+          {name:"prompts.py",type:"file",icon:"ti-brand-python",desc:"FR + Darija templates",detail:{title:"prompts.py — Prompt templates",desc:"All Claude API prompt templates. Separate system prompts for farmer advisor (French), farmer advisor (Darija), and cooperative manager. Structured to output zone-by-zone action plans.",tags:["prompts","French","Darija","structured output"]}},
+          {name:"scoring.py",type:"file",icon:"ti-brand-python",desc:"Zone urgency scoring",detail:{title:"scoring.py — Zone urgency scorer",desc:"Combines NDMI + SAR moisture + rain forecast + temperature to produce a 0–100 urgency score per zone. Drives the color-coded map and action plan priority order.",tags:["scoring","NDMI","urgency","priority"]}},
+        ]},
+        {name:"weather/",type:"folder",icon:"ti-cloud-rain",children:[
+          {name:"openmeteo.py",type:"file",icon:"ti-brand-python",desc:"Rain + ET0 forecast",detail:{title:"openmeteo.py",desc:"Queries OpenMeteo API (no API key needed). Returns 7-day rainfall forecast and ET0 evapotranspiration. Used to adjust irrigation timing and water balance model.",tags:["OpenMeteo","rainfall","ET0","free API"]}},
+        ]},
+      ]},
+      {name:"requirements.txt",type:"file",icon:"ti-file-text",desc:"Python dependencies",detail:{title:"requirements.txt",desc:"fastapi, uvicorn, motor (MongoDB async), anthropic, earthengine-api, rasterio, numpy, shapely, geopandas, scikit-learn, openmeteo-requests",tags:["pip","dependencies"]}},
+      {name:"Dockerfile",type:"file",icon:"ti-brand-docker",desc:"Container config",detail:{title:"Dockerfile",desc:"Python 3.11-slim base. Installs GDAL for rasterio. Exposes port 8000. Configured for Railway.app deployment.",tags:["Docker","Railway","GDAL"]}},
+      {name:".env.example",type:"file",icon:"ti-file-dotted",desc:"Environment variables",detail:{title:".env.example",desc:"Template for all required keys: COPERNICUS_EMAIL, COPERNICUS_PASSWORD, GEE_PROJECT_ID, ANTHROPIC_API_KEY, MONGODB_URI.",tags:["env","secrets","config"]}},
+    ]},
+    {name:"frontend/",type:"folder",icon:"ti-brand-react",badge:{text:"React",color:"blue"},desc:"React 18 dashboard",detail:{title:"Frontend — React 18",desc:"Mobile-first PWA dashboard. Leaflet maps with zone overlays, Recharts trend charts, Tailwind styling. Deployed on Vercel.",tags:["React 18","Leaflet","Tailwind","Recharts","Vercel"]},children:[
+      {name:"src/",type:"folder",icon:"ti-folder",children:[
+        {name:"components/",type:"folder",icon:"ti-folder",children:[
+          {name:"map/",type:"folder",icon:"ti-map",desc:"Leaflet map components",children:[
+            {name:"FarmMap.jsx",type:"file",icon:"ti-brand-react",badge:{text:"key",color:"green"},desc:"Main Leaflet map",detail:{title:"FarmMap.jsx — Interactive farm map",desc:"Leaflet map centered on the farm. Renders GeoJSON zone polygons colored by urgency status. Includes layer toggles for NDVI heatmap vs SAR moisture view.",tags:["Leaflet","GeoJSON","zones","NDVI overlay"]}},
+            {name:"ZoneLayer.jsx",type:"file",icon:"ti-brand-react",desc:"Zone color overlay",detail:{title:"ZoneLayer.jsx",desc:"Renders colored polygon overlays per zone. Colors: green (good), yellow (warning), red (critical), blue (overwatered). Updates reactively when data refreshes.",tags:["GeoJSON","zones","color","status"]}},
+            {name:"ZonePopup.jsx",type:"file",icon:"ti-brand-react",desc:"Click zone → details",detail:{title:"ZonePopup.jsx",desc:"Leaflet popup shown on zone click. Displays NDVI, NDMI, SAR moisture values, urgency badge, recommended action, and water volume estimate.",tags:["popup","NDVI","NDMI","details"]}},
+          ]},
+          {name:"dashboard/",type:"folder",icon:"ti-layout-dashboard",children:[
+            {name:"ActionPlan.jsx",type:"file",icon:"ti-brand-react",badge:{text:"key",color:"green"},desc:"Daily irrigation plan",detail:{title:"ActionPlan.jsx — Daily action plan",desc:"Priority-sorted list of zones requiring action today. Each item shows urgency badge, zone name, recommended water volume (L/ha), optimal irrigation time, and one-sentence explanation from Claude AI.",tags:["action plan","urgency","Claude AI","irrigation"]}},
+            {name:"NDVIChart.jsx",type:"file",icon:"ti-brand-react",desc:"30-day trend chart",detail:{title:"NDVIChart.jsx",desc:"Recharts line chart showing NDVI + NDMI trends over the past 30 days. Highlights dates when recommendations were generated. Helps farmers track seasonal progression.",tags:["Recharts","NDVI","NDMI","trend","30 days"]}},
+            {name:"WaterSaved.jsx",type:"file",icon:"ti-brand-react",desc:"Savings estimate",detail:{title:"WaterSaved.jsx",desc:"Estimates water saved vs traditional uniform irrigation. Based on number of zones that were 'overwatered' status vs what farmer would have watered anyway.",tags:["water savings","impact","metric"]}},
+          ]},
+          {name:"advice/",type:"folder",icon:"ti-message-chatbot",children:[
+            {name:"AIAdvice.jsx",type:"file",icon:"ti-brand-react",badge:{text:"AI",color:"amber"},desc:"Claude advice display",detail:{title:"AIAdvice.jsx — Claude AI advice panel",desc:"Displays the Claude-generated irrigation advice in a clean card. Shows language badge (FR/Darija), confidence level, and generated timestamp. Streams text for live feel.",tags:["Claude API","advice","streaming","French","Darija"]}},
+          ]},
+        ]},
+        {name:"pages/",type:"folder",icon:"ti-folder",children:[
+          {name:"Dashboard.jsx",type:"file",icon:"ti-brand-react",badge:{text:"main",color:"blue"},desc:"Main farm dashboard",detail:{title:"Dashboard.jsx — Main dashboard",desc:"Primary app screen. Two-panel layout: left = FarmMap, right = ActionPlan + AIAdvice. Weather banner at top if rain forecast within 48h.",tags:["dashboard","main","layout"]}},
+          {name:"Analytics.jsx",type:"file",icon:"ti-brand-react",desc:"Season analytics",detail:{title:"Analytics.jsx",desc:"Season-level view: NDVI trend chart, water saved this season, yield forecast badge, comparison vs regional average.",tags:["analytics","season","yield"]}},
+          {name:"Landing.jsx",type:"file",icon:"ti-brand-react",desc:"Public landing + waitlist",detail:{title:"Landing.jsx — Landing page",desc:"Public-facing landing page with product pitch, demo screenshot, farmer testimonials, and waitlist signup form. Deployed at root URL.",tags:["landing","waitlist","marketing"]}},
+        ]},
+        {name:"services/",type:"folder",icon:"ti-folder",children:[
+          {name:"api.js",type:"file",icon:"ti-file",desc:"Axios API client",detail:{title:"api.js",desc:"Configured Axios instance pointing to FastAPI backend. Exports typed functions: getFarmAnalysis(), getFarmAdvice(), getFarmHistory().",tags:["Axios","API","fetch"]}},
+        ]},
+      ]},
+      {name:"package.json",type:"file",icon:"ti-file-text",desc:"NPM dependencies",detail:{title:"package.json",desc:"react, react-dom, leaflet, react-leaflet, recharts, axios, tailwindcss, vite, vite-plugin-pwa",tags:["npm","dependencies","Vite"]}},
+    ]},
+    {name:"satellite/",type:"folder",icon:"ti-satellite",badge:{text:"scripts",color:"green"},desc:"Standalone scripts",detail:{title:"satellite/ — Standalone scripts",desc:"Runnable Python scripts for testing and demoing the satellite pipeline independently of the backend. Start with demo_souss_massa.py.",tags:["Python","GEE","demo","Sentinel"]},children:[
+      {name:"demo_souss_massa.py",type:"file",icon:"ti-brand-python",badge:{text:"🔥 start here",color:"red"},desc:"Run this first",detail:{title:"demo_souss_massa.py — 🔥 Start here",desc:"Complete demo script. Pulls real Sentinel-2 data for a real farm at 30.44°N -8.42°E (Souss-Massa, Morocco). Computes all indices. Outputs zones_analysis.json. Run this before the hackathon.",tags:["demo","Souss-Massa","Sentinel-2","NDVI","zones"]}},
+      {name:"gee_ndvi.js",type:"file",icon:"ti-file",desc:"GEE browser script",detail:{title:"gee_ndvi.js — Google Earth Engine",desc:"Paste into code.earthengine.google.com. Loads Sentinel-2 for Morocco, computes NDVI, shows color map in browser. No installation needed.",tags:["GEE","JavaScript","browser","NDVI"]}},
+      {name:"fetch_sentinel1_sar.py",type:"file",icon:"ti-brand-python",badge:{text:"radar",color:"amber"},desc:"Download SAR data",detail:{title:"fetch_sentinel1_sar.py",desc:"Downloads Sentinel-1 GRD product for given coordinates and date range. Authenticates with Copernicus token. Extracts VV + VH bands.",tags:["Sentinel-1","SAR","download","VV","VH"]}},
+      {name:"compute_indices.py",type:"file",icon:"ti-brand-python",desc:"Compute all 4 indices",detail:{title:"compute_indices.py",desc:"Takes raw band GeoTiff files, computes NDVI + NDMI + NDRE (optical) and SAR moisture proxy. Outputs per-pixel arrays and zone-aggregated JSON.",tags:["NDVI","NDMI","NDRE","SAR","numpy","rasterio"]}},
+    ]},
+    {name:"notebooks/",type:"folder",icon:"ti-notebook",desc:"Jupyter exploration",children:[
+      {name:"01_sentinel2_exploration.ipynb",type:"file",icon:"ti-file",desc:"Explore Sentinel-2",detail:{title:"01 — Sentinel-2 exploration",desc:"Interactive notebook for exploring Sentinel-2 imagery for Moroccan farms. Visualize NDVI maps, compare dates, understand band combinations.",tags:["Jupyter","Sentinel-2","exploration","Morocco"]}},
+      {name:"02_sar_soil_moisture.ipynb",type:"file",icon:"ti-file",badge:{text:"radar",color:"amber"},desc:"SAR VV/VH analysis",detail:{title:"02 — SAR soil moisture",desc:"Deep dive into Sentinel-1 VV/VH backscatter. Shows how wet vs dry soil produces different backscatter values. Validates against OpenMeteo rainfall data.",tags:["SAR","VV","VH","soil moisture","backscatter"]}},
+      {name:"03_cloudy_day_strategy.ipynb",type:"file",icon:"ti-file",desc:"Cloud coverage handling",detail:{title:"03 — Cloudy day strategy",desc:"Side-by-side comparison of optical vs SAR moisture estimates for the same farm, same dates. Demonstrates the 4-level fallback strategy.",tags:["clouds","SAR","optical","fusion","comparison"]}},
+    ]},
+    {name:"data/",type:"folder",icon:"ti-database",desc:"Sample data",children:[
+      {name:"sample/",type:"folder",icon:"ti-folder",children:[
+        {name:"souss_massa_farm.geojson",type:"file",icon:"ti-file",badge:{text:"demo",color:"green"},desc:"Demo farm boundary",detail:{title:"souss_massa_farm.geojson",desc:"GeoJSON polygon of a real agricultural parcel in the Souss-Massa region, Morocco. Used for all demo and testing purposes. Approx. 8 hectares.",tags:["GeoJSON","Souss-Massa","Morocco","demo"]}},
+        {name:"zones_analysis_sample.json",type:"file",icon:"ti-file",desc:"Sample analysis output",detail:{title:"zones_analysis_sample.json",desc:"Sample output from the full satellite pipeline. Contains 9 zones with NDVI, NDMI, NDRE, SAR moisture, urgency status, and recommended actions. Use for frontend development without running the pipeline.",tags:["JSON","mock data","9 zones","frontend dev"]}},
+      ]},
+    ]},
+    {name:"docs/",type:"folder",icon:"ti-book",desc:"Documentation",children:[
+      {name:"satellite_indices.md",type:"file",icon:"ti-file-text",desc:"NDVI NDMI NDRE SAR explained",detail:{title:"satellite_indices.md",desc:"Complete explanation of all 4 indices with formulas, band numbers, interpretation thresholds, and Morocco-specific context.",tags:["NDVI","NDMI","NDRE","SAR","formulas"]}},
+      {name:"cloudy_day_strategy.md",type:"file",icon:"ti-file-text",badge:{text:"key",color:"red"},desc:"Cloud coverage strategy",detail:{title:"cloudy_day_strategy.md — Key technical doc",desc:"The most important technical document for judge questions. Explains how SAR penetrates clouds physically (wavelength vs droplet size), and documents the 4-level fallback priority system.",tags:["clouds","SAR","physics","judges","critical"]}},
+      {name:"api_reference.md",type:"file",icon:"ti-file-text",desc:"All API endpoints",detail:{title:"api_reference.md",desc:"Full REST API documentation with example requests and responses for all endpoints: /analyze, /advice, /history, /alerts.",tags:["API","REST","endpoints","documentation"]}},
+      {name:"pitch_deck.pdf",type:"file",icon:"ti-file",badge:{text:"pitch",color:"green"},desc:"Hackathon pitch deck",detail:{title:"pitch_deck.pdf — 5-slide pitch",desc:"The hackathon pitch deck. Slide 1: Problem. Slide 2: Demo. Slide 3: How it works. Slide 4: Validation. Slide 5: Business + vision.",tags:["pitch","slides","hackathon","5 slides"]}},
+    ]},
+    {name:"docker-compose.yml",type:"file",icon:"ti-brand-docker",desc:"Full stack local dev",detail:{title:"docker-compose.yml",desc:"Spins up backend (FastAPI on 8000) + frontend (Vite on 5173) + MongoDB. Single command to run the full stack locally.",tags:["Docker","compose","local dev"]}},
+    {name:".env.example",type:"file",icon:"ti-file-dotted",desc:"All env variables",detail:{title:".env.example — Environment variables",desc:"Template with all required variables: COPERNICUS_EMAIL, COPERNICUS_PASSWORD, GEE_PROJECT_ID, ANTHROPIC_API_KEY, MONGODB_URI. Copy to .env and fill in before running.",tags:["env","secrets","setup"]}},
+    {name:"README.md",type:"file",icon:"ti-file-text",badge:{text:"docs",color:"blue"},desc:"You are here",detail:{title:"README.md",desc:"Project overview, quick start guide (5 minutes), environment variable setup, satellite data sources, API endpoint summary, and team structure.",tags:["README","docs","quick start"]}},
+  ]
+};
+
+let selected = null;
+
+function makeNode(node, depth=0){
+  const div = document.createElement('div');
+  div.className = 'node';
+  const row = document.createElement('div');
+  row.className = 'row';
+  const toggle = document.createElement('span');
+  toggle.className = 'toggle' + (node.children ? '' : ' leaf');
+  toggle.innerHTML = node.children ? '<i class="ti ti-chevron-right" aria-hidden="true"></i>' : '';
+  const icon = document.createElement('i');
+  icon.className = 'ti ' + (node.icon||'ti-file') + ' icon';
+  icon.style.color = node.type==='folder'||node.type==='root' ? 'var(--color-text-warning)' : 'var(--color-text-secondary)';
+  icon.setAttribute('aria-hidden','true');
+  const name = document.createElement('span');
+  name.className = 'name' + (node.children ? ' folder' : '');
+  name.textContent = node.name;
+  row.appendChild(toggle);
+  row.appendChild(icon);
+  row.appendChild(name);
+  if(node.badge){
+    const b = document.createElement('span');
+    b.className = 'badge ' + node.badge.color;
+    b.textContent = node.badge.text;
+    row.appendChild(b);
+  }
+  if(node.desc){
+    const d = document.createElement('span');
+    d.className = 'desc';
+    d.textContent = node.desc;
+    row.appendChild(d);
+  }
+  div.appendChild(row);
+  let childWrap = null;
+  if(node.children){
+    childWrap = document.createElement('div');
+    childWrap.className = 'children';
+    childWrap.style.display = depth < 1 ? 'block' : 'none';
+    if(depth < 1) toggle.querySelector('i').style.transform = 'rotate(90deg)';
+    node.children.forEach(c => childWrap.appendChild(makeNode(c, depth+1)));
+    div.appendChild(childWrap);
+    row.addEventListener('click', ()=>{
+      const open = childWrap.style.display !== 'none';
+      childWrap.style.display = open ? 'none' : 'block';
+      const ic = toggle.querySelector('i');
+      if(ic) ic.style.transform = open ? '' : 'rotate(90deg)';
+    });
+  }
+  if(node.detail){
+    row.addEventListener('click', (e)=>{
+      if(selected) selected.classList.remove('active');
+      selected = row;
+      row.classList.add('active');
+      showDetail(node);
+    });
+  }
+  return div;
+}
+
+function showDetail(node){
+  const panel = document.getElementById('detail');
+  panel.style.display = 'block';
+  const d = node.detail;
+  panel.innerHTML = `
+    <h3><i class="ti ${node.icon} icon" style="font-size:16px" aria-hidden="true"></i> ${d.title}</h3>
+    <p>${d.desc}</p>
+    <div class="tags">${(d.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+  `;
+}
+
+const tree = document.getElementById('tree');
+tree.appendChild(makeNode(data));
+</script>
