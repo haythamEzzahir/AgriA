@@ -1,0 +1,9 @@
+{
+  "farm_id": "farm_001",
+  "ndvi": 0.22,
+  "soil_moisture": 0.18,
+  "temperature": 39,
+  "humidity": 25,
+  "rain_forecast": "none",
+  "language": "French"
+}
