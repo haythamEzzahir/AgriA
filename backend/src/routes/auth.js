@@ -2,43 +2,58 @@ import { Router } from 'express';
 
 const router = Router();
 
+const DEMO_USERS = [
+  { email: 'demo@agricopilot.ma', password: 'demo123', name: 'Ahmed Farmer', id: 'demo-001' },
+  { email: 'fatima@agricopilot.ma', password: 'demo123', name: 'Fatima Grower', id: 'demo-002' },
+];
+
 router.post('/signup', async (req, res) => {
   const { email, password, name } = req.body;
-  const { supabase } = await import('../config/supabase.js');
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-  if (authError) return res.status(400).json({ error: authError.message });
+  try {
+    const { supabase } = await import('../config/supabase.js');
 
-  if (authData.user) {
-    const { error: dbError } = await supabase.from('users').insert({
-      id: authData.user.id,
-      name,
-      email,
-    });
-    if (dbError) return res.status(500).json({ error: dbError.message });
+    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+    if (authError) throw authError;
+
+    if (authData.user) {
+      const { error: dbError } = await supabase.from('users').insert({
+        id: authData.user.id, name, email,
+      });
+      if (dbError) throw dbError;
+    }
+
+    res.status(201).json({ user: authData.user, session: authData.session });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Signup failed' });
   }
-
-  res.status(201).json({ user: authData.user, session: authData.session });
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const { supabase } = await import('../config/supabase.js');
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return res.status(401).json({ error: error.message });
+  // Demo mode: check demo users first
+  const demoUser = DEMO_USERS.find((u) => u.email === email && u.password === password);
+  if (demoUser) {
+    return res.json({
+      user: { id: demoUser.id, email: demoUser.email, name: demoUser.name },
+      session: { access_token: 'demo-token-' + demoUser.id, user: demoUser },
+    });
+  }
 
-  res.json({ user: data.user, session: data.session });
+  try {
+    const { supabase } = await import('../config/supabase.js');
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    res.json({ user: data.user, session: data.session });
+  } catch (err) {
+    res.status(401).json({ error: err.message || 'Invalid credentials' });
+  }
 });
 
 router.post('/logout', async (req, res) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Missing token' });
-
-  const { supabase } = await import('../config/supabase.js');
-  const { error } = await supabase.auth.admin.signOut(token);
-  if (error) return res.status(500).json({ error: error.message });
-
   res.json({ message: 'Logged out' });
 });
 

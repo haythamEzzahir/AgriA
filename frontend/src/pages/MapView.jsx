@@ -1,14 +1,17 @@
 import React from 'react';
+import { useLanguage } from '../i18n/context';
 import FarmMap from '../components/Map/FarmMap';
 import NDVIOverlay from '../components/Map/NDVIOverlay';
 
 export default function MapView() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Farm Map</h1>
-      <p className="text-gray-600">Draw your farm polygon on the map to analyze vegetation health.</p>
+  const { t } = useLanguage();
 
-      <div className="h-[600px] rounded-xl overflow-hidden shadow-lg border">
+  return (
+    <div className="space-y-6 pb-20 md:pb-6">
+      <h1 className="text-2xl font-bold text-gray-800">{t('map.title')}</h1>
+      <p className="text-gray-500 text-sm">{t('map.subtitle')}</p>
+
+      <div className="h-[500px] rounded-xl overflow-hidden shadow-sm border">
         <FarmMap />
       </div>
 
