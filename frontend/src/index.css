@@ -15,3 +15,23 @@ body {
 .ndvi-high { background: #22c55e; }
 .ndvi-moderate { background: #eab308; }
 .ndvi-low { background: #ef4444; }
+
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .mr-auto { margin-left: auto; margin-right: 0; }
+[dir="rtl"] .ml-auto { margin-right: auto; margin-left: 0; }
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+
+[dir="rtl"] .flex-row { flex-direction: row-reverse; }
+[dir="rtl"] .md\:flex-row { flex-direction: row-reverse; }
+
+@media (min-width: 768px) {
+  [dir="rtl"] .md\:text-left { text-align: right; }
+}

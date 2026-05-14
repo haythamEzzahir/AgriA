@@ -1,42 +1,37 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, FeatureGroup } from 'react-leaflet';
-import { EditControl } from 'react-leaflet-draw';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
+import { MapContainer, TileLayer, Polygon, useMapEvents } from 'react-leaflet';
+
+function DrawPolygon({ onPolygon }) {
+  const [positions, setPositions] = useState([]);
+
+  useMapEvents({
+    click(e) {
+      const newPos = [...positions, [e.latlng.lat, e.latlng.lng]];
+      setPositions(newPos);
+      if (newPos.length >= 3) {
+        onPolygon(newPos);
+      }
+    },
+  });
+
+  return positions.length > 0 ? (
+    <Polygon positions={positions} pathOptions={{ color: '#22c55e', fillOpacity: 0.2 }} />
+  ) : null;
+}
 
 export default function FarmMap() {
   const [polygon, setPolygon] = useState(null);
-
-  const onCreated = (e) => {
-    setPolygon(e.layer.getLatLngs());
-  };
+  const center = [31.7917, -7.0926];
 
   return (
-    <MapContainer center={[31.5, -7.0]} zoom={7} className="h-full w-full">
+    <MapContainer center={center} zoom={6} className="h-full w-full">
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="&copy; OpenStreetMap contributors"
       />
-
-      <FeatureGroup>
-        <EditControl
-          position="topright"
-          onCreated={onCreated}
-          draw={{
-            rectangle: false,
-            circle: false,
-            circlemarker: false,
-            marker: false,
-            polyline: false,
-          }}
-        />
-      </FeatureGroup>
-
-      {polygon && (
-        <TileLayer
-          url={`https://tiles.agromonitoring.com/agro/{z}/{x}/{y}?appid=DEMO_KEY`}
-          opacity={0.6}
-        />
+      <DrawPolygon onPolygon={setPolygon} />
+      {polygon && polygon.length >= 3 && (
+        <Polygon positions={polygon} pathOptions={{ color: '#16a34a', fillOpacity: 0.3 }} />
       )}
     </MapContainer>
   );
