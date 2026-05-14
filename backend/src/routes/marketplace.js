@@ -4,13 +4,15 @@ import { supabase } from '../config/supabase.js';
 
 const router = Router();
 
-router.use(requireAuth);
-
 router.get('/', async (req, res) => {
-  const { data, error } = await supabase
-    .from('farms')
-    .select('*')
-    .eq('user_id', req.user.id);
+  const { category, search } = req.query;
+
+  let query = supabase.from('listings').select('*, users(name, location)');
+
+  if (category) query = query.eq('category', category);
+  if (search) query = query.ilike('title', `%${search}%`);
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
@@ -18,22 +20,21 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   const { data, error } = await supabase
-    .from('farms')
-    .select('*')
+    .from('listings')
+    .select('*, users(name, location)')
     .eq('id', req.params.id)
-    .eq('user_id', req.user.id)
     .single();
 
-  if (error) return res.status(404).json({ error: 'Farm not found' });
+  if (error) return res.status(404).json({ error: 'Listing not found' });
   res.json(data);
 });
 
-router.post('/', async (req, res) => {
-  const { name, polygon } = req.body;
+router.post('/', requireAuth, async (req, res) => {
+  const { category, title, description, price, photo_url, location } = req.body;
 
   const { data, error } = await supabase
-    .from('farms')
-    .insert({ user_id: req.user.id, name, polygon })
+    .from('listings')
+    .insert({ user_id: req.user.id, category, title, description, price, photo_url, location })
     .select()
     .single();
 
@@ -41,12 +42,12 @@ router.post('/', async (req, res) => {
   res.status(201).json(data);
 });
 
-router.put('/:id', async (req, res) => {
-  const { name, polygon } = req.body;
+router.put('/:id', requireAuth, async (req, res) => {
+  const { category, title, description, price, photo_url, location } = req.body;
 
   const { data, error } = await supabase
-    .from('farms')
-    .update({ name, polygon, updated_at: new Date() })
+    .from('listings')
+    .update({ category, title, description, price, photo_url, location, updated_at: new Date() })
     .eq('id', req.params.id)
     .eq('user_id', req.user.id)
     .select()
@@ -56,9 +57,9 @@ router.put('/:id', async (req, res) => {
   res.json(data);
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   const { error } = await supabase
-    .from('farms')
+    .from('listings')
     .delete()
     .eq('id', req.params.id)
     .eq('user_id', req.user.id);
