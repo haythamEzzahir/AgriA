@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/context';
+import { useAuth } from '../services/AuthContext';
 import { auth } from '../services/api';
 
 function LoginForm() {
   const { t } = useLanguage();
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,8 +20,8 @@ function LoginForm() {
 
     try {
       const res = await auth.login({ email, password });
-      localStorage.setItem('session', JSON.stringify(res.session));
-      window.location.href = '/dashboard';
+      login(res.session);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -44,6 +48,8 @@ function LoginForm() {
 
 function RegisterForm() {
   const { t } = useLanguage();
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,8 +61,8 @@ function RegisterForm() {
 
     try {
       const res = await auth.signup(form);
-      localStorage.setItem('session', JSON.stringify(res.session));
-      window.location.href = '/register';
+      if (res.session) login(res.session);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

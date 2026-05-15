@@ -18,14 +18,14 @@ export default function Marketplace() {
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{t('marketplace.title')}</h1>
-          <p className="text-gray-500 text-sm">{t('marketplace.subtitle')}</p>
+          <h1 className="text-lg font-bold text-agri-50">{t('marketplace.title')}</h1>
+          <p className="text-agri-500 text-xs">{t('marketplace.subtitle')}</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition">
+          className="px-4 py-2 bg-agri-500 text-white rounded-lg text-sm font-medium hover:bg-agri-400 transition">
           {showForm ? t('marketplace.cancel') : t('marketplace.addListing')}
         </button>
       </div>
@@ -35,8 +35,8 @@ export default function Marketplace() {
       <div className="flex gap-2 flex-wrap">
         {categories.map((cat) => (
           <button key={cat.id} onClick={() => setCategory(cat.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition ${
-              category === cat.id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition ${
+              category === cat.id ? 'bg-agri-700 text-agri-200' : 'bg-agri-800 text-agri-500 hover:bg-agri-700 hover:text-agri-300 border border-agri-700'
             }`}>
             {t(`marketplace.${cat.key}`)}
           </button>

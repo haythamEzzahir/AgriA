@@ -1,7 +1,17 @@
 const API = '/api';
 
+async function getToken() {
+  try {
+    const stored = localStorage.getItem('session');
+    if (!stored) return null;
+    return JSON.parse(stored).access_token || null;
+  } catch {
+    return null;
+  }
+}
+
 async function request(path, options = {}) {
-  const token = localStorage.getItem('session') ? JSON.parse(localStorage.getItem('session')).access_token : null;
+  const token = await getToken();
 
   const res = await fetch(`${API}${path}`, {
     ...options,
@@ -27,6 +37,10 @@ export const auth = {
   logout: () => request('/auth/logout', { method: 'POST' }),
 };
 
+export const register = {
+  create: (body) => request('/register', { method: 'POST', body: JSON.stringify(body) }),
+};
+
 export const farms = {
   list: () => request('/farms'),
   get: (id) => request(`/farms/${id}`),
@@ -49,6 +63,10 @@ export const ai = {
   history: (farmId) => request(`/ai/history/${farmId}`),
 };
 
+export const soil = {
+  get: (farmId) => request(`/soil/${farmId}`),
+};
+
 export const alerts = {
   list: (farmId) => request(`/alerts/${farmId}`),
 };
@@ -58,7 +76,13 @@ export const recommendations = {
 };
 
 export const marketplace = {
-  list: (params) => request(`/marketplace?${new URLSearchParams(params)}`),
+  list: (params) => {
+    const searchParams = new URLSearchParams();
+    if (params?.category && params.category !== 'all') searchParams.set('category', params.category);
+    if (params?.search) searchParams.set('search', params.search);
+    const qs = searchParams.toString();
+    return request(`/marketplace${qs ? '?' + qs : ''}`);
+  },
   get: (id) => request(`/marketplace/${id}`),
   create: (body) => request('/marketplace', { method: 'POST', body: JSON.stringify(body) }),
   update: (id, body) => request(`/marketplace/${id}`, { method: 'PUT', body: JSON.stringify(body) }),

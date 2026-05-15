@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/context';
-import { useVoiceGuide } from '../components/Register/VoiceGuide';
+import { useAuth } from '../services/AuthContext';
+import { register } from '../services/api';
 
 const FARM_SIZES = [
   { id: 'small', icon: '🌱', labelEn: 'Small (< 1ha)', labelAr: 'صغيرة (أقل من 1 هكتار)', labelFr: 'Petite (< 1ha)' },
@@ -48,19 +49,6 @@ const REGIONS = [
   'Drâa-Tafilalet', 'Laâyoune-Sakia El Hamra', 'Dakhla-Oued Ed-Dahab',
 ];
 
-function Checkbox({ checked, onChange, id }) {
-  return (
-    <div
-      onClick={() => onChange(!checked)}
-      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition shrink-0 ${
-        checked ? 'bg-emerald-500 border-emerald-500' : 'border-gray-600'
-      }`}
-    >
-      {checked && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-    </div>
-  );
-}
-
 function ToggleChip({ selected, onClick, children }) {
   return (
     <button onClick={onClick}
@@ -77,15 +65,17 @@ function ToggleChip({ selected, onClick, children }) {
 export default function Register() {
   const navigate = useNavigate();
   const { lang, setLang, languages, t } = useLanguage();
-  const { speak } = useVoiceGuide(lang === 'ar' ? 'ar-MA' : lang === 'fr' ? 'fr-FR' : 'en-US');
+  const { isAuthenticated } = useAuth();
 
-  const [section, setSection] = useState(0); // 0 = farmer info, 1 = farm info
+  const [section, setSection] = useState(0);
   const [form, setForm] = useState({
     name: '', phone: '', region: '', goals: [],
-    marketplace: [], size: '', crops: [], irrigation: '',
+    size: '', crops: [], irrigation: '',
     waterAccess: '', customArea: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [error, setError] = useState('');
 
   const update = useCallback((key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -98,11 +88,37 @@ export default function Register() {
     }));
   }, []);
 
-  const handleSubmit = async () => {
+  const handlePersonalSubmit = async () => {
+    setSavingPersonal(true);
+    setError('');
+
+    try {
+      await register.create({
+        name: form.name, phone: form.phone, region: form.region, goals: form.goals,
+      });
+      setSection(1);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingPersonal(false);
+    }
+  };
+
+  const handleFarmSubmit = async () => {
     setSubmitting(true);
-    console.log('🎉 Registered:', form);
-    await new Promise((r) => setTimeout(r, 800));
-    navigate('/dashboard', { replace: true });
+    setError('');
+
+    try {
+      await register.create({
+        name: form.name, size: form.size, customArea: form.customArea,
+        crops: form.crops, irrigation: form.irrigation, waterAccess: form.waterAccess,
+      });
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const l = (o) => {
@@ -114,7 +130,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-emerald-950 to-gray-900 text-white">
-      {/* Header */}
       <div className="border-b border-white/5">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -140,7 +155,6 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="max-w-4xl mx-auto px-4 pt-8 pb-4">
         <div className="flex gap-2 bg-white/5 rounded-xl p-1">
           <button onClick={() => setSection(0)}
@@ -158,11 +172,23 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Content */}
+      {!isAuthenticated && (
+        <div className="max-w-4xl mx-auto px-4 mb-4">
+          <div className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-200">
+            Please <a href="/auth" className="underline font-medium">sign in</a> first to save your farm profile.
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto px-4 pb-24">
+        {error && (
+          <div className="mb-4 bg-red-500/20 border border-red-500/30 rounded-xl p-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
         {section === 0 ? (
           <div className="space-y-6">
-            {/* Name */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">👤 Full Name</label>
               <input value={form.name} onChange={(e) => update('name', e.target.value)}
@@ -170,7 +196,6 @@ export default function Register() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition text-lg" />
             </div>
 
-            {/* Phone + Region side by side */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">📞 Phone Number</label>
@@ -191,7 +216,6 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Goals */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">🎯 Goals (choose what matters)</label>
               <div className="flex flex-wrap gap-2">
@@ -204,16 +228,15 @@ export default function Register() {
             </div>
 
             <div className="text-center">
-              <button onClick={() => isFarmerComplete && setSection(1)}
-                disabled={!isFarmerComplete}
+              <button onClick={handlePersonalSubmit}
+                disabled={!isFarmerComplete || savingPersonal}
                 className="px-10 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
-                Next → Farm Information
+                {savingPersonal ? '⏳ Saving...' : 'Next → Farm Information'}
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Farm Size */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">📏 Farm Size</label>
               <div className="grid grid-cols-3 gap-3">
@@ -232,7 +255,6 @@ export default function Register() {
                 className="mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition text-sm" />
             </div>
 
-            {/* Crops */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">🌱 Crops (select all that apply)</label>
               <div className="grid grid-cols-4 gap-2">
@@ -248,7 +270,6 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Irrigation + Water side by side */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">💧 Irrigation Method</label>
@@ -285,9 +306,8 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Submit */}
             <div className="text-center pt-4">
-              <button onClick={handleSubmit} disabled={submitting || !form.size || !form.irrigation || !form.waterAccess}
+              <button onClick={handleFarmSubmit} disabled={submitting || !isAuthenticated || !form.size || !form.irrigation || !form.waterAccess}
                 className="px-12 py-3.5 bg-emerald-500 text-white rounded-xl font-semibold text-lg hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
                 {submitting ? '⏳ Creating Profile...' : '✓ Create Farm Profile'}
               </button>

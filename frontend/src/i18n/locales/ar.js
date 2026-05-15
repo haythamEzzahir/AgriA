@@ -141,6 +141,8 @@ export default {
     location: 'الموقع',
     photo: 'صورة',
     by: 'بواسطة',
+    noListings: 'لا توجد إعلانات.',
+    publishing: 'جاري النشر...',
   },
   register: {
     back: 'رجوع',

@@ -7,14 +7,12 @@ export default function MapView() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
-      <h1 className="text-2xl font-bold text-gray-800">{t('map.title')}</h1>
-      <p className="text-gray-500 text-sm">{t('map.subtitle')}</p>
-
-      <div className="h-[500px] rounded-xl overflow-hidden shadow-sm border">
+    <div className="space-y-4">
+      <h1 className="text-lg font-bold text-agri-50">{t('map.title')}</h1>
+      <p className="text-agri-500 text-xs">{t('map.subtitle')}</p>
+      <div className="h-[500px] rounded-lg overflow-hidden border border-agri-700">
         <FarmMap />
       </div>
-
       <NDVIOverlay />
     </div>
   );

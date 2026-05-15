@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { supabase, supabaseAnon } from '../config/supabase.js';
 
 const router = Router();
 
@@ -10,30 +11,36 @@ const DEMO_USERS = [
 router.post('/signup', async (req, res) => {
   const { email, password, name } = req.body;
 
-  try {
-    const { supabase, supabaseAnon } = await import('../config/supabase.js');
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Email, password, and name are required' });
+  }
 
+  try {
     const { data: authData, error: authError } = await supabaseAnon.auth.signUp({ email, password });
-    if (authError) throw authError;
+    if (authError) return res.status(400).json({ error: authError.message });
 
     if (authData.user) {
       const { error: dbError } = await supabase.from('users').insert({
-        id: authData.user.id, name, email,
+        id: authData.user.id,
+        name,
+        email,
       });
-      if (dbError) throw dbError;
+      if (dbError) return res.status(500).json({ error: dbError.message });
     }
 
     res.status(201).json({ user: authData.user, session: authData.session });
-  } catch (err) {
-    console.error('Signup error:', err);
-    res.status(500).json({ error: err.message || 'Signup failed' });
+  } catch {
+    res.status(503).json({ error: 'Signup service unreachable. Try again later or use demo accounts.' });
   }
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Demo mode: check demo users first
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
   const demoUser = DEMO_USERS.find((u) => u.email === email && u.password === password);
   if (demoUser) {
     return res.json({
@@ -43,19 +50,18 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const { supabaseAnon } = await import('../config/supabase.js');
-
     const { data, error } = await supabaseAnon.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-
-    res.json({ user: data.user, session: data.session });
-  } catch (err) {
-    res.status(401).json({ error: err.message || 'Invalid credentials' });
+    if (error) return res.status(401).json({ error: error.message });
+    return res.json({ user: data.user, session: data.session });
+  } catch {
+    return res.status(503).json({
+      error: 'Login service unreachable. Use demo accounts: demo@agricopilot.ma / demo123'
+    });
   }
 });
 
-router.post('/logout', async (req, res) => {
-  res.json({ message: 'Logged out' });
+router.post('/logout', (_req, res) => {
+  res.json({ message: 'Logged out successfully' });
 });
 
 export default router;

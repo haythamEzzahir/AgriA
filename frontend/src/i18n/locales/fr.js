@@ -141,6 +141,8 @@ export default {
     location: 'Lieu',
     photo: 'Photo',
     by: 'par',
+    noListings: 'Aucune annonce trouvée.',
+    publishing: 'Publication...',
   },
   register: {
     back: 'Retour',

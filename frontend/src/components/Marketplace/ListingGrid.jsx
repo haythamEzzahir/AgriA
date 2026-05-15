@@ -1,14 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../i18n/context';
-
-const mockListings = [
-  { id: 1, title: 'Organic Tomatoes', category: 'crops', price: 25, location: 'Marrakech', user: 'Farmer Ahmed' },
-  { id: 2, title: 'Wheat Seeds (Premium)', category: 'seeds', price: 120, location: 'Fes', user: 'Coop Al Baraka' },
-  { id: 3, title: 'NPK Fertilizer 20-20-20', category: 'fertilizers', price: 350, location: 'Casablanca', user: 'AgriSupply' },
-  { id: 4, title: 'Tractor for Rent', category: 'equipment', price: 500, location: 'Rabat', user: 'Mechta Services' },
-  { id: 5, title: 'Soil Analysis Service', category: 'services', price: 200, location: 'Agadir', user: 'LabVert' },
-  { id: 6, title: 'Fresh Bell Peppers', category: 'crops', price: 18, location: 'Meknes', user: 'Green Valley Farm' },
-];
+import { marketplace } from '../../services/api';
 
 const emojiMap = {
   crops: '🌾', seeds: '🌱', fertilizers: '🧪', equipment: '🚜', services: '🔧',
@@ -16,23 +8,66 @@ const emojiMap = {
 
 export default function ListingGrid({ category }) {
   const { t } = useLanguage();
-  const filtered = category === 'all' ? mockListings : mockListings.filter((l) => l.category === category);
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await marketplace.list({ category });
+        setListings(data || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [category]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-400">{t('dashboard.loading')}</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400">{error}</p>
+      </div>
+    );
+  }
+
+  if (!listings.length) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-400">{t('marketplace.noListings') || 'No listings found.'}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filtered.map((listing) => (
-        <div key={listing.id} className="bg-white p-4 rounded-xl shadow-sm border border-farm-100 hover:shadow-md transition">
-          <div className="h-32 bg-farm-50 rounded-lg mb-3 flex items-center justify-center text-3xl">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {listings.map((listing) => (
+        <div key={listing.id} className="bg-agri-800 p-4 rounded-lg border border-agri-700 hover:border-agri-600 transition">
+          <div className="h-28 bg-agri-900 rounded-lg mb-3 flex items-center justify-center text-3xl">
             {emojiMap[listing.category] || '📦'}
           </div>
-          <h3 className="font-semibold text-sm">{listing.title}</h3>
-          <p className="text-xs text-gray-400 capitalize">{t(`marketplace.${listing.category}`)}</p>
+          <h3 className="font-semibold text-sm text-agri-100">{listing.title}</h3>
+          <p className="text-xs text-agri-500 capitalize">{t(`marketplace.${listing.category}`)}</p>
           <div className="flex items-center justify-between mt-2">
-            <span className="font-bold text-farm-700">{listing.price} MAD</span>
-            <span className="text-xs text-gray-400">{listing.location}</span>
+            <span className="font-bold text-agri-300 text-sm">{listing.price ? `${listing.price} MAD` : '—'}</span>
+            <span className="text-xs text-agri-600">{listing.location || listing.users?.location || ''}</span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">{t('marketplace.by')} {listing.user}</p>
-          <button className="mt-3 w-full py-2 bg-gray-900 text-white rounded-xl text-xs font-medium hover:bg-gray-800 transition">
+          {listing.users?.name && (
+            <p className="text-xs text-agri-600 mt-1">{t('marketplace.by')} {listing.users.name}</p>
+          )}
+          <button className="mt-3 w-full py-2 bg-agri-500 text-white rounded-lg text-xs font-medium hover:bg-agri-400 transition">
             {t('marketplace.contact')}
           </button>
         </div>
