@@ -23,4 +23,17 @@ export const config = {
     apiKey: process.env.OPENROUTER_API_KEY,
     model: process.env.OPENROUTER_MODEL || 'claude-3-haiku',
   },
+  copernicus: {
+    clientId: process.env.CDSE_CLIENT_ID,
+    clientSecret: process.env.CDSE_CLIENT_SECRET,
+  },
+  deepseek: {
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
+    model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+  },
+  openMeteo: {
+    base: process.env.OPEN_METEO_BASE || 'https://api.open-meteo.com/v1',
+  },
+  imagerySource: process.env.IMAGERY_SOURCE || 'copernicus',
 };

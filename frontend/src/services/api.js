@@ -67,6 +67,10 @@ export const soil = {
   get: (farmId) => request(`/soil/${farmId}`),
 };
 
+export const analyze = {
+  run: (farmId, language = 'mixed') => request(`/analyze/${farmId}`, { method: 'POST', body: JSON.stringify({ language }) }),
+};
+
 export const alerts = {
   list: (farmId) => request(`/alerts/${farmId}`),
 };
