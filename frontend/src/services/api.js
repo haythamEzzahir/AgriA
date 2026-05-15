@@ -49,6 +49,14 @@ export const ai = {
   history: (farmId) => request(`/ai/history/${farmId}`),
 };
 
+export const alerts = {
+  list: (farmId) => request(`/alerts/${farmId}`),
+};
+
+export const recommendations = {
+  get: (farmId) => request(`/recommendations/${farmId}`),
+};
+
 export const marketplace = {
   list: (params) => request(`/marketplace?${new URLSearchParams(params)}`),
   get: (id) => request(`/marketplace/${id}`),

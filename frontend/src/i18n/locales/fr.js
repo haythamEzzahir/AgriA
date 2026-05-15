@@ -100,6 +100,9 @@ export default {
     vegetation: 'Végétation',
     stressLevel: 'Niveau de stress',
     groundQuality: 'Analyse de la qualité du sol',
+    loading: 'Chargement...',
+    noFarm: 'Aucune ferme trouvée. Créez-en une sur la page Carte.',
+    noData: 'Aucune donnée disponible.',
   },
   map: {
     title: 'Carte de la ferme',

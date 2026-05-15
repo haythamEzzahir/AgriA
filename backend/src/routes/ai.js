@@ -29,7 +29,7 @@ router.post('/explain', async (req, res) => {
     .limit(1);
 
   const latestNDVI = ndviData?.[0] || {};
-  const alerts = await runRuleEngine(latestNDVI);
+  const alerts = await runRuleEngine(farmId, latestNDVI);
   const context = generateContext(farm, latestNDVI, alerts);
   const aiResponse = await queryAI(context, question);
 

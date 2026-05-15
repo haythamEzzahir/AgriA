@@ -100,6 +100,9 @@ export default {
     vegetation: 'Vegetation',
     stressLevel: 'Stress Level',
     groundQuality: 'Ground Quality Analysis',
+    loading: 'Loading...',
+    noFarm: 'No farms found. Create one on the Map page.',
+    noData: 'No data available.',
   },
   map: {
     title: 'Farm Map',
