@@ -1,0 +1,6 @@
+node_modules/
+.env
+coverage/
+.polygon_cache.json
+.venv/
+__pycache__/

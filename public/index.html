@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriCopilot — Farm Health Analysis</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<style>
+  :root {
+    --green:  #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444;
+    --blue:   #3b82f6; --gray:   #6b7280; --dark:  #1e293b; --light: #f8fafc;
+    --card-bg: #ffffff; --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: var(--dark); }
+
+  header { background: linear-gradient(135deg, #15803d, #166534); color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 1.15rem; font-weight: 600; }
+  header .env-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; background: rgba(255,255,255,.2); }
+
+  .state { display: none; }
+  .state.active { display: block; }
+
+  /* ── Input ────────────────────────────────── */
+  .input-layout { display: grid; grid-template-columns: 1fr 320px; gap: 0; max-width: 1280px; margin: 20px auto; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  @media (max-width: 800px) { .input-layout { grid-template-columns: 1fr; } }
+  #map-input { height: 550px; }
+  .sidebar { background: white; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .sidebar label { font-size: 0.82rem; font-weight: 600; color: #475569; }
+  .sidebar input, .sidebar select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; }
+  .sidebar input:focus, .sidebar select:focus { outline: none; border-color: #15803d; box-shadow: 0 0 0 3px rgba(21,128,61,.12); }
+  .btn { padding: 12px 16px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary { background: #15803d; color: white; width: 100%; }
+  .btn-primary:hover:not(:disabled) { background: #166534; }
+  .btn-outline { background: white; color: var(--dark); border: 1px solid var(--border); }
+  .poly-info { font-size: 0.8rem; color: #64748b; padding: 8px; background: #f1f5f9; border-radius: 6px; display: none; }
+  .poly-info.visible { display: block; }
+
+  /* ── Loading ──────────────────────────────── */
+  .loading-card { text-align: center; padding: 80px 20px; max-width: 500px; margin: 60px auto; background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .spinner { width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top-color: #15803d; border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 18px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-card p { color: #64748b; }
+
+  /* ── Results ──────────────────────────────── */
+  .results-container { max-width: 1280px; margin: 0 auto; padding: 16px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+  .top-bar h2 { font-size: 1.15rem; }
+
+  .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.82rem; display: none; }
+  .banner.warn { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; display: block; }
+  .banner.info { background: #dbeafe; border: 1px solid #3b82f6; color: #1e40af; display: block; }
+  .analysis-id { font-size: 0.68rem; color: #94a3b8; font-family: monospace; }
+
+  /* ── Map + env cards row ──────────────────── */
+  .map-env-row { display: grid; grid-template-columns: 1fr 260px; gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 800px) { .map-env-row { grid-template-columns: 1fr; } }
+  #map-result { height: 420px; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .env-cards { display: flex; flex-direction: column; gap: 8px; }
+  .env-card { background: white; border-radius: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .env-card .env-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .env-card .env-val { font-size: 1.15rem; font-weight: 700; margin-top: 2px; }
+  .env-card .env-sub { font-size: 0.7rem; color: #94a3b8; }
+  .env-temp { color: var(--orange); }
+  .env-rain { color: var(--blue); }
+  .env-soil { color: #92400e; }
+  .env-et0  { color: #0891b2; }
+
+  /* ── Summary pills ────────────────────────── */
+  .summary-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .pill { padding: 12px; border-radius: 8px; text-align: center; color: white; font-weight: 600; }
+  .pill .pill-num { font-size: 1.5rem; display: block; }
+  .pill .pill-label { font-size: 0.7rem; opacity: 0.85; }
+  .pill-critical { background: var(--red); }
+  .pill-stressed { background: var(--orange); }
+  .pill-moderate { background: var(--yellow); color: var(--dark); }
+  .pill-healthy { background: var(--green); }
+  .pill-water { background: var(--blue); }
+  .pill-date { background: var(--gray); }
+
+  /* ── Zone grid ────────────────────────────── */
+  .zone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 700px) { .zone-grid { grid-template-columns: 1fr 1fr; } }
+  .zone-card { background: white; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.07); border-left: 4px solid var(--gray); position: relative; }
+  .zone-card.critical { border-left-color: var(--red); background: #fef2f2; }
+  .zone-card.stressed { border-left-color: var(--orange); background: #fff7ed; }
+  .zone-card.moderate { border-left-color: var(--yellow); background: #fefce8; }
+  .zone-card.healthy { border-left-color: var(--green); background: #f0fdf4; }
+  .zone-card .zc-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .zone-card .zc-id { font-weight: 700; font-size: 1rem; }
+  .zone-card .zc-pos { font-size: 0.72rem; color: #64748b; }
+  .zone-card .zc-decision { font-size: 0.78rem; font-weight: 600; margin-top: 2px; }
+  .zone-card .zc-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-top: 8px; font-size: 0.72rem; }
+  .zone-card .zc-metric-label { color: #94a3b8; }
+  .zone-card .zc-metric-val { font-weight: 600; }
+  .zone-card .zc-action { margin-top: 8px; padding: 6px 8px; background: rgba(0,0,0,.04); border-radius: 6px; font-size: 0.73rem; color: #475569; }
+  .zone-card.no-data { opacity: 0.45; }
+
+  /* ── Narrative ────────────────────────────── */
+  .narrative-card { background: white; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .narrative-card h3 { margin-bottom: 10px; font-size: 0.95rem; }
+  .narrative-card pre { white-space: pre-wrap; font-family: inherit; font-size: 0.9rem; line-height: 1.7; }
+
+  /* ── Legend ───────────────────────────────── */
+  .map-legend { background: white; padding: 8px 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.15); font-size: 0.72rem; line-height: 1.8; }
+  .map-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+  /* ── Heatmap layer controls ──────────────────── */
+  .layer-controls {
+    background: white; padding: 10px 14px; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 10px;
+    display: none; gap: 20px; align-items: center; flex-wrap: wrap;
+  }
+  .layer-controls.visible { display: flex; }
+  .layer-controls label { font-size: 0.85rem; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background .12s; }
+  .layer-controls label:hover { background: #f1f5f9; }
+  .layer-controls input[type="radio"] { margin-right: 3px; vertical-align: middle; }
+  .opacity-control { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; margin-left: auto; }
+  .opacity-control input[type="range"] { width: 100px; cursor: pointer; }
+
+  .error-card { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 12px; padding: 24px; text-align: center; max-width: 500px; margin: 60px auto; }
+  .error-card h3 { color: #dc2626; margin-bottom: 8px; }
+  .error-card p { color: #7f1d1d; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 AgriCopilot — Farm Health Analysis</h1>
+  <span class="env-badge" id="env-badge">● Live</span>
+</header>
+
+<!-- ═══ INPUT ═══ -->
+<div id="state-input" class="state active">
+  <div class="input-layout">
+    <div id="map-input"></div>
+    <div class="sidebar">
+      <div><label for="farm-name">Farm name</label><input id="farm-name" placeholder="e.g. Ferme d'Ahmed" maxlength="80"></div>
+      <div><label for="farm-crop">Crop</label><select id="farm-crop">
+        <option value="">Select crop…</option>
+        <option value="tomato">Tomato</option><option value="wheat">Wheat</option><option value="olive">Olive</option><option value="citrus">Citrus</option><option value="barley">Barley</option><option value="maize">Maize</option><option value="other">Other</option>
+      </select></div>
+      <div class="poly-info" id="poly-info"><strong id="poly-pts">0</strong> points drawn</div>
+      <button class="btn btn-primary" id="btn-analyze" disabled>Run Analysis</button>
+      <p style="font-size:0.75rem;color:#94a3b8">Draw a polygon on the map outlining your farm. Analysis takes ~30s using fresh Sentinel-2 satellite data.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOADING ═══ -->
+<div id="state-loading" class="state">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <p id="loading-msg">Registering farm polygon...</p>
+    <p style="font-size:0.78rem;color:#94a3b8;margin-top:6px">Searching satellite imagery, computing vegetation indices, running analysis.</p>
+  </div>
+</div>
+
+<!-- ═══ RESULTS ═══ -->
+<div id="state-results" class="state">
+  <div class="results-container">
+    <div class="top-bar">
+      <h2 id="result-title"></h2>
+      <button class="btn btn-outline" id="btn-new">← New Analysis</button>
+    </div>
+    <div class="banner warn" id="stale-banner"></div>
+    <div class="banner info" id="demo-banner"></div>
+    <div class="analysis-id" id="analysis-id-line"></div>
+
+    <!-- Heatmap layer controls -->
+    <div id="layer-controls" class="layer-controls">
+      <label><input type="radio" name="index-radio" value="ndvi" checked> NDVI (Vegetation)</label>
+      <label><input type="radio" name="index-radio" value="ndwi"> NDWI (Water)</label>
+      <div class="opacity-control">
+        <label>Opacity:</label>
+        <input type="range" id="opacity-slider" min="0" max="1" step="0.05" value="0.65">
+        <span id="opacity-value">65%</span>
+      </div>
+    </div>
+
+    <!-- Map + Environment cards -->
+    <div class="map-env-row">
+      <div id="map-result"></div>
+      <div class="env-cards" id="env-cards"></div>
+    </div>
+
+    <!-- Summary pills -->
+    <div class="summary-row" id="summary-row"></div>
+
+    <!-- Zone grid -->
+    <div class="zone-grid" id="zone-grid"></div>
+
+    <!-- Narrative -->
+    <div class="narrative-card" id="narrative-card">
+      <h3>📋 Farmer Report</h3>
+      <pre id="narrative-text"></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ERROR ═══ -->
+<div id="state-error" class="state">
+  <div class="error-card">
+    <h3>Analysis Failed</h3>
+    <p id="error-msg"></p>
+    <button class="btn btn-outline" id="btn-retry">Try Again</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script>
+'use strict';
+
+// ══ Globals ═══════════════════════════════════════════════════════════
+let drawnLayer = null, coordinates = null;
+let resultMap = null, resultZoneLayer = null;
+let heatmapLayer  = null;       // L.imageOverlay instance
+let legendControl = null;       // L.control for the heatmap legend
+let activeIndex   = 'ndvi';     // 'ndvi' | 'ndwi'
+let imageryData   = null;       // data.imagery from API
+
+// ══ Mode badge ═══════════════════════════════════════════════════════
+fetch('/api/health').then(r=>r.json()).then(d=>{
+  document.getElementById('env-badge').textContent =
+    (d.env.AGROMONITORING_API_KEY ? '● Live' : '● Sample') +
+    (d.env.DEEPSEEK_API_KEY ? '' : ' (no narrative)');
+});
+
+// ══ Input map ═══════════════════════════════════════════════════════
+const inputMap = L.map('map-input').setView([30.42, -9.54], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OSM', maxZoom: 19
+}).addTo(inputMap);
+
+new L.Control.Draw({
+  draw: {
+    polyline:false,circle:false,circlemarker:false,marker:false,rectangle:true,
+    polygon:{allowIntersection:false,showArea:true,shapeOptions:{color:'#15803d',weight:2}}
+  },
+  edit:{featureGroup:new L.FeatureGroup()}
+}).addTo(inputMap);
+
+inputMap.on(L.Draw.Event.CREATED, e => {
+  if(drawnLayer) inputMap.removeLayer(drawnLayer);
+  drawnLayer = e.layer; inputMap.addLayer(drawnLayer);
+  updateCoords(drawnLayer);
+});
+inputMap.on(L.Draw.Event.EDITED, e => {
+  const ls = e.layers.getLayers();
+  if(ls.length) updateCoords(ls[0]);
+});
+
+function updateCoords(layer) {
+  const ll = layer.getLatLngs()[0];
+  const pts = ll.map(p => [p.lng, p.lat]);
+  if(pts[0][0]!==pts[pts.length-1][0]||pts[0][1]!==pts[pts.length-1][1]) pts.push(pts[0].slice());
+  coordinates = pts;
+  document.getElementById('poly-info').classList.add('visible');
+  document.getElementById('poly-pts').textContent = pts.length;
+  checkReady();
+}
+document.getElementById('farm-name').addEventListener('input', checkReady);
+document.getElementById('farm-crop').addEventListener('change', checkReady);
+function checkReady() {
+  document.getElementById('btn-analyze').disabled =
+    !(document.getElementById('farm-name').value.trim() && coordinates?.length >= 4 && document.getElementById('farm-crop').value);
+}
+
+// ══ State ══════════════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.state').forEach(s=>s.classList.remove('active'));
+  document.getElementById('state-'+id).classList.add('active');
+}
+
+// ══ Analyze ════════════════════════════════════════════════════════
+document.getElementById('btn-analyze').addEventListener('click', analyze);
+document.getElementById('btn-retry').addEventListener('click',()=>show('input'));
+document.getElementById('btn-new').addEventListener('click',()=>{
+  show('input');
+  imageryData = null; activeIndex = 'ndvi'; heatmapLayer = null; legendControl = null;
+  document.getElementById('layer-controls').classList.remove('visible');
+  document.querySelector('input[name="index-radio"][value="ndvi"]').checked = true;
+  document.getElementById('opacity-slider').value = '0.65';
+  document.getElementById('opacity-value').textContent = '65%';
+});
+
+// Heatmap layer controls
+document.querySelectorAll('input[name="index-radio"]').forEach(radio => {
+  radio.addEventListener('change', function () { if (this.checked) switchIndex(this.value); });
+});
+document.getElementById('opacity-slider').addEventListener('input', function () {
+  updateOpacity(parseFloat(this.value));
+});
+
+async function analyze() {
+  const name = document.getElementById('farm-name').value.trim();
+  const crop = document.getElementById('farm-crop').value;
+  show('loading');
+  let progress = ['Registering farm polygon...', 'Searching satellite imagery...', 'Computing vegetation indices...', 'Running zone analysis...'];
+  let i=0;
+  const t=setInterval(()=>{if(i<progress.length)document.getElementById('loading-msg').textContent=progress[i++];},5000);
+  try {
+    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,crop,coordinates})});
+    clearInterval(t);
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.details||d.error||'Unknown error');
+    render(d, name);
+  } catch(e) {
+    clearInterval(t);
+    document.getElementById('error-msg').textContent=e.message;
+    show('error');
+  }
+}
+
+// ══ Render results ═════════════════════════════════════════════════
+function render(data, name) {
+  document.getElementById('result-title').textContent = 'Analysis: ' + name;
+  const s = data.summary;
+
+  // Store imagery data for layer switching
+  imageryData = data.imagery || null;
+  activeIndex = 'ndvi';
+  heatmapLayer = null;
+  legendControl = null;
+  document.getElementById('layer-controls').classList.toggle('visible', !!(imageryData && !s.all_zones_no_data));
+  if (imageryData) {
+    document.querySelector('input[name="index-radio"][value="ndvi"]').checked = true;
+    document.getElementById('opacity-slider').value = '0.65';
+    document.getElementById('opacity-value').textContent = '65%';
+  }
+
+  // Banners
+  const bn = document.getElementById('stale-banner');
+  if(s.all_zones_no_data && s.stale_data) { bn.style.display='block'; bn.textContent='No recent cloud-free imagery available. Try a different area or wait for the next Sentinel-2 pass (up to 5 days).'; }
+  else if(s.all_zones_no_data) { bn.style.display='block'; bn.textContent='The satellite scene had no valid pixels inside your polygon.'; }
+  else if(s.stale_data) { bn.style.display='block'; bn.textContent='Using older satellite imagery — no recent cloud-free scene was available.'; }
+  else { bn.style.display='none'; }
+
+  // Demo-data indicator
+  const db = document.getElementById('demo-banner');
+  if (data.is_demo_data) {
+    db.style.display='block';
+    db.textContent='Demo data — results are not based on real satellite imagery.';
+  } else { db.style.display='none'; }
+
+  // Analysis run ID (for debugging duplicate/cache issues)
+  document.getElementById('analysis-id-line').textContent = data.analysis_id ? 'Run: ' + data.analysis_id : '';
+
+  // Environment cards
+  const fc = data.farm_context || {};
+  document.getElementById('env-cards').innerHTML =
+    '<div class="env-card"><div class="env-label">🌡️ Temperature</div><div class="env-val env-temp">'+(fc.air_temperature?.toFixed(1)??'—')+'°C</div></div>'+
+    '<div class="env-card"><div class="env-label">💧 Soil Moisture</div><div class="env-val env-soil">'+((fc.soil_moisture??0)*100).toFixed(0)+'%</div></div>'+
+    '<div class="env-card"><div class="env-label">🌧️ Rain (3-day forecast)</div><div class="env-val env-rain">'+(fc.rain_3d_mm?.toFixed(1)??'—')+' mm</div></div>'+
+    '<div class="env-card"><div class="env-label">💨 Evapotranspiration</div><div class="env-val env-et0">'+(fc.et0_mm_per_day?.toFixed(1)??'—')+' mm/day</div></div>';
+
+  // Summary pills
+  document.getElementById('summary-row').innerHTML =
+    '<div class="pill pill-critical"><span class="pill-num">'+s.critical_zones+'</span><span class="pill-label">Critical</span></div>'+
+    '<div class="pill pill-stressed"><span class="pill-num">'+s.stressed_zones+'</span><span class="pill-label">Stressed</span></div>'+
+    '<div class="pill pill-moderate"><span class="pill-num">'+s.moderate_zones+'</span><span class="pill-label">Moderate</span></div>'+
+    '<div class="pill pill-healthy"><span class="pill-num">'+s.healthy_zones+'</span><span class="pill-label">Healthy</span></div>'+
+    '<div class="pill pill-water"><span class="pill-num">'+fmtL(s.total_water_needed_liters)+'</span><span class="pill-label">Total water</span></div>'+
+    '<div class="pill pill-date"><span class="pill-num" style="font-size:0.8rem">'+fmtDate(data.satellite_date)+'</span><span class="pill-label">Satellite pass</span></div>';
+
+  // Zone grid
+  const labels=['A','B','C','D','E','F','G','H','I'], positions=['NW','N','NE','W','Center','E','SW','S','SE'];
+  const byZone={}; for(const z of data.zones) byZone[z.zone_id]=z;
+
+  let grid='';
+  for(let i=0;i<9;i++) {
+    const z=byZone[labels[i]];
+    if(!z||s.all_zones_no_data) {
+      grid+='<div class="zone-card no-data"><div class="zc-id">'+labels[i]+'</div><div class="zc-pos">'+positions[i]+'</div><div class="zc-decision" style="color:#94a3b8">No data</div></div>';
+      continue;
+    }
+    const tier=z.status||'healthy';
+    const a=z.action;
+    grid+='<div class="zone-card '+tier+'">'+
+      '<div class="zc-top"><div><div class="zc-id">Zone '+z.zone_id+'</div><div class="zc-pos">'+z.position+'</div></div>'+
+      '<div class="zc-decision">'+(z.decision||'').replace(/_/g,' ')+'</div></div>'+
+      '<div class="zc-metrics">'+
+        '<div><span class="zc-metric-label">NDVI</span><br><span class="zc-metric-val">'+(z.metrics?.ndvi_mean?.toFixed(3)??'—')+'</span></div>'+
+        '<div><span class="zc-metric-label">NDWI</span><br><span class="zc-metric-val">'+(z.metrics?.ndwi_mean?.toFixed(3)??'—')+'</span></div>'+
+        '<div><span class="zc-metric-label">Pixels</span><br><span class="zc-metric-val">'+(z.metrics?.pixel_count??'—')+'</span></div>'+
+        '<div><span class="zc-metric-label">Water Score</span><br><span class="zc-metric-val">'+(z.scores?.water_score??'—')+'</span></div>'+
+      '</div>'+
+      (a?('<div class="zc-action">💧 '+fmtL(a.amount_liters)+' L — '+a.timing.replace(/_/g,' ')+'</div>'):'')+
+    '</div>';
+  }
+  document.getElementById('zone-grid').innerHTML = grid;
+
+  // Narrative
+  const nel = document.getElementById('narrative-text');
+  if (s.all_zones_no_data) {
+    nel.style.color='#94a3b8';
+    nel.textContent='[No valid satellite data found for this polygon. The scene may be cloudy, or the farm is outside the image bounds. Try adjusting the polygon or waiting for the next Sentinel-2 pass.]';
+  } else if(data.narrative&&!data.narrative.startsWith('[')) {
+    nel.style.color=''; nel.textContent=data.narrative;
+  } else {
+    nel.style.color='#94a3b8'; nel.textContent='[Set DEEPSEEK_API_KEY in .env to enable the farmer report]';
+  }
+
+  // ── Results map with zone overlay ─────────────────────────────────
+  renderResultMap(data);
+
+  show('results');
+  window.scrollTo(0,0);
+}
+
+// ══ Results map ════════════════════════════════════════════════════
+function renderResultMap(data) {
+  // Destroy previous map instance if any
+  if(resultMap) { resultMap.remove(); resultMap=null; }
+  heatmapLayer = null;
+
+  const mapEl = document.getElementById('map-result');
+  mapEl.innerHTML = '';
+
+  // Find polygon coordinates from first zone that has them
+  let farmPolyCoords = null;
+  for(const z of data.zones) {
+    if(z.polygon?.geometry?.coordinates?.[0]) {
+      farmPolyCoords = z.polygon;
+      break;
+    }
+  }
+
+  // Default center
+  const center = farmPolyCoords
+    ? (() => { const cs=farmPolyCoords.geometry.coordinates[0]; const lat=cs.reduce((s,c)=>s+c[1],0)/cs.length; const lng=cs.reduce((s,c)=>s+c[0],0)/cs.length; return [lat,lng]; })()
+    : [30.42, -9.54];
+
+  resultMap = L.map(mapEl).setView(center, 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; OSM',maxZoom:19}).addTo(resultMap);
+
+  if(farmPolyCoords) {
+    // Draw farm outline
+    L.geoJSON(farmPolyCoords, {style:{color:'#1e293b',weight:2,fillOpacity:0}}).addTo(resultMap);
+
+    // Draw zone polygons coloured by severity — subtle fill so heatmap shows through
+    const tierColor = {critical:'#ef4444',stressed:'#f97316',moderate:'#eab308',healthy:'#22c55e',nodata:'#94a3b8'};
+    resultZoneLayer = L.featureGroup().addTo(resultMap);
+
+    for(const z of data.zones) {
+      if(!z.polygon) continue;
+      const tier = z.status || 'healthy';
+      const color = tierColor[tier] || tierColor.nodata;
+      const layer = L.geoJSON(z.polygon, {
+        style: { color: color, weight: 1.5, fillColor: color, fillOpacity: 0.08 },
+      }).bindTooltip(
+        '<b>Zone '+z.zone_id+' ('+z.position+')</b><br>'+
+        (z.decision||'No data').replace(/_/g,' ')+'<br>'+
+        'NDVI '+(z.metrics?.ndvi_mean?.toFixed(3)??'—')+' · NDWI '+(z.metrics?.ndwi_mean?.toFixed(3)??'—'),
+        {sticky:true}
+      );
+      resultZoneLayer.addLayer(layer);
+    }
+
+    if (resultZoneLayer.getLayers().length > 0) {
+      resultMap.fitBounds(resultZoneLayer.getBounds().pad(0.1));
+    }
+
+    // Heatmap overlay
+    addHeatmapOverlay(data);
+  }
+
+  // Legend (only when there is zone data and imagery)
+  if (imageryData && !data.summary?.all_zones_no_data) updateLegend();
+}
+
+// ── Heatmap ImageOverlay ──────────────────────────────────────────────
+function addHeatmapOverlay(data) {
+  const img = data.imagery;
+  if (!img || !img.heatmap) return;
+
+  // bbox is [minLng, minLat, maxLng, maxLat] (GeoJSON / WGS84).
+  // Leaflet ImageOverlay wants [[south, west], [north, east]] — lat first!
+  const bbox = img.heatmap.bbox;
+  const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+
+  console.log('[heatmap] bbox (WGS84):', bbox.map(v => v.toFixed(4)).join(', '));
+  console.log('[heatmap] Leaflet bounds:', JSON.stringify(bounds));
+
+  const url = img.prerendered?.[activeIndex] || img.heatmap[activeIndex];
+  if (!url) return;
+
+  const opacity = parseFloat(document.getElementById('opacity-slider').value);
+  heatmapLayer = L.imageOverlay(url, bounds, { opacity, zIndex: 400 }).addTo(resultMap);
+  heatmapLayer.bringToBack(); // zone polygons on top
+}
+
+function switchIndex(newIndex) {
+  if (newIndex === activeIndex) return;
+  activeIndex = newIndex;
+  if (!imageryData || !heatmapLayer) return;
+  const url = imageryData.prerendered?.[activeIndex] || imageryData.heatmap?.[activeIndex];
+  if (url) {
+    console.log('[heatmap] Switching to', activeIndex.toUpperCase());
+    heatmapLayer.setUrl(url);
+  }
+  updateLegend();
+}
+
+function updateOpacity(value) {
+  document.getElementById('opacity-value').textContent = Math.round(value * 100) + '%';
+  // Leaflet bug #2708 — only call setOpacity after the overlay has been added.
+  // heatmapLayer is null before the first analysis; the guard handles that.
+  if (heatmapLayer) heatmapLayer.setOpacity(value);
+}
+
+// ── Heatmap Legend ────────────────────────────────────────────────────
+// Mirrors NDVI_COLOR_STOPS / NDWI_COLOR_STOPS from pipeline.js.
+const LEGEND_COLORS = {
+  ndvi: ['#67000d','#b2182b','#d6604d','#ffffbf','#a6d96a','#1a9850','#00441b'],
+  ndwi: ['#543005','#a58100','#d6c48a','#ffffff','#aed6f1','#418fd8','#08306b'],
+};
+
+function updateLegend() {
+  // Remove previous legend via stored control reference
+  if (legendControl && resultMap) {
+    resultMap.removeControl(legendControl);
+    legendControl = null;
+  }
+
+  if (!imageryData || !imageryData.heatmap || !resultMap) return;
+
+  const colors = LEGEND_COLORS[activeIndex] || LEGEND_COLORS.ndvi;
+  const gradient = 'linear-gradient(to right, ' + colors.join(', ') + ')';
+
+  legendControl = L.control({ position: 'bottomright' });
+  legendControl.onAdd = function () {
+    const d = L.DomUtil.create('div', 'map-legend heatmap-legend');
+    d.innerHTML =
+      '<b>' + activeIndex.toUpperCase() + '</b>' +
+      '<div style="height:14px;width:180px;border-radius:3px;margin:4px 0;border:1px solid #e2e8f0;background:' + gradient + '"></div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:0.68rem;color:#475569">' +
+        '<span>-1</span><span>-0.5</span><span>-0.2</span><span>0</span><span>+0.2</span><span>+0.5</span><span>+1</span>' +
+      '</div>';
+    return d;
+  };
+  legendControl.addTo(resultMap);
+}
+
+// ══ Helpers ═══════════════════════════════════════════════════════
+function fmtL(n) { return n>=1000?Math.round(n/1000)+'k L':Math.round(n)+' L'; }
+function fmtDate(iso) { if(!iso)return'—'; const d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+</script>
+</body>
+</html>
