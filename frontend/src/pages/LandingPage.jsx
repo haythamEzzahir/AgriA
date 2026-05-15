@@ -1,5 +1,8 @@
 import React, { lazy, Suspense } from 'react';
 import { useLanguage } from '../i18n/context';
+import img1 from '../image/im1.jpeg';
+import img2 from '../image/im2.jpeg';
+import img3 from '../image/im3.jpeg';
 const GlobeMap = lazy(() => import('../components/GlobeMap'));
 
 function LangSwitcher() {
@@ -110,24 +113,57 @@ function Hero() {
 function Problems() {
   const { t } = useLanguage();
   const problems = [
-    { icon: '💧', title: t('landing.problem1Title'), desc: t('landing.problem1Desc') },
-    { icon: '🔇', title: t('landing.problem2Title'), desc: t('landing.problem2Desc') },
-    { icon: '📉', title: t('landing.problem3Title'), desc: t('landing.problem3Desc') },
+    {
+      image: img1,
+      title: t('landing.problem1Title'),
+      desc: t('landing.problem1Desc'),
+    },
+    {
+      image: img2,
+      title: t('landing.problem2Title'),
+      desc: t('landing.problem2Desc'),
+    },
+    {
+      image: img3,
+      title: t('landing.problem3Title'),
+      desc: t('landing.problem3Desc'),
+    },
   ];
 
   return (
-    <section className="py-24 bg-gradient-to-b from-white to-farm-50">
+    <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">{t('landing.problemsTitle')}</h2>
-          <p className="text-xl text-gray-500 max-w-2xl mx-auto">{t('landing.problemsDesc')}</p>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
+            {t('landing.problemsTitle')}
+          </h2>
+          <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+            {t('landing.problemsDesc')}
+          </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
-          {problems.map((p) => (
-            <div key={p.title} className="p-8 rounded-2xl bg-farm-50 border border-farm-100 hover:shadow-lg transition">
-              <span className="text-4xl block mb-4">{p.icon}</span>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{p.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{p.desc}</p>
+          {problems.map((p, idx) => (
+            <div
+              key={idx}
+              className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 ease-out overflow-hidden"
+            >
+               <div className="relative overflow-hidden">
+                <div className="aspect-[4/3] overflow-hidden rounded-t-3xl">
+                  <img
+                    src={p.image}
+                    alt={p.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                  />
+                </div>
+              </div>
+              <div className="p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  {p.title}
+                </h3>
+                <p className="text-gray-500 leading-relaxed">
+                  {p.desc}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -139,10 +175,10 @@ function Problems() {
 function HowItWorks() {
   const { t } = useLanguage();
   const steps = [
-    { num: '01', icon: '🛰️', title: t('landing.step1Title'), desc: t('landing.step1Desc') },
-    { num: '02', icon: '⚡', title: t('landing.step2Title'), desc: t('landing.step2Desc') },
-    { num: '03', icon: '🤖', title: t('landing.step3Title'), desc: t('landing.step3Desc') },
-    { num: '04', icon: '🌱', title: t('landing.step4Title'), desc: t('landing.step4Desc') },
+    { num: '01', title: t('landing.step1Title'), desc: t('landing.step1Desc') },
+    { num: '02', title: t('landing.step2Title'), desc: t('landing.step2Desc') },
+    { num: '03', title: t('landing.step3Title'), desc: t('landing.step3Desc') },
+    { num: '04', title: t('landing.step4Title'), desc: t('landing.step4Desc') },
   ];
 
   return (
@@ -155,10 +191,11 @@ function HowItWorks() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step) => (
             <div key={step.num} className="relative p-6 bg-farm-50 rounded-2xl border border-farm-100 hover:shadow-xl transition group">
-              <span className="text-5xl text-farm-200 font-black absolute top-4 end-4 group-hover:text-farm-300 transition">{step.num}</span>
-              <span className="text-3xl block mb-4 relative">{step.icon}</span>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 relative">{step.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed relative">{step.desc}</p>
+              <div className="w-12 h-12 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-5 group-hover:border-agri-200 group-hover:shadow-md transition">
+                <span className="text-lg font-bold text-gray-800">{step.num}</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -170,12 +207,12 @@ function HowItWorks() {
 function Solutions() {
   const { t } = useLanguage();
   const solutions = [
-    { icon: '🗺️', title: t('landing.sol1Title'), desc: t('landing.sol1Desc') },
-    { icon: '🌡️', title: t('landing.sol2Title'), desc: t('landing.sol2Desc') },
-    { icon: '🤖', title: t('landing.sol3Title'), desc: t('landing.sol3Desc') },
-    { icon: '🌾', title: t('landing.sol4Title'), desc: t('landing.sol4Desc') },
-    { icon: '🏪', title: t('landing.sol5Title'), desc: t('landing.sol5Desc') },
-    { icon: '📊', title: t('landing.sol6Title'), desc: t('landing.sol6Desc') },
+    { title: t('landing.sol1Title'), desc: t('landing.sol1Desc') },
+    { title: t('landing.sol2Title'), desc: t('landing.sol2Desc') },
+    { title: t('landing.sol3Title'), desc: t('landing.sol3Desc') },
+    { title: t('landing.sol4Title'), desc: t('landing.sol4Desc') },
+    { title: t('landing.sol5Title'), desc: t('landing.sol5Desc') },
+    { title: t('landing.sol6Title'), desc: t('landing.sol6Desc') },
   ];
 
   return (
@@ -188,10 +225,7 @@ function Solutions() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {solutions.map((s) => (
             <div key={s.title} className="p-6 rounded-2xl bg-white border border-farm-100 hover:border-farm-200 hover:shadow-lg transition group">
-              <div className="w-12 h-12 bg-farm-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-farm-100 transition">
-                <span className="text-2xl">{s.icon}</span>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{s.title}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-800 transition">{s.title}</h3>
               <p className="text-gray-500 text-sm leading-relaxed">{s.desc}</p>
             </div>
           ))}
@@ -204,9 +238,9 @@ function Solutions() {
 function Testimonials() {
   const { t } = useLanguage();
   const testimonials = [
-    { quote: t('landing.testimonial1'), name: t('landing.testimonial1Name'), role: t('landing.testimonial1Role'), emoji: '👩‍🌾' },
-    { quote: t('landing.testimonial2'), name: t('landing.testimonial2Name'), role: t('landing.testimonial2Role'), emoji: '👨‍🌾' },
-    { quote: t('landing.testimonial3'), name: t('landing.testimonial3Name'), role: t('landing.testimonial3Role'), emoji: '👨‍🌾' },
+    { quote: t('landing.testimonial1'), name: t('landing.testimonial1Name'), role: t('landing.testimonial1Role'), initials: 'FB' },
+    { quote: t('landing.testimonial2'), name: t('landing.testimonial2Name'), role: t('landing.testimonial2Role'), initials: 'AL' },
+    { quote: t('landing.testimonial3'), name: t('landing.testimonial3Name'), role: t('landing.testimonial3Role'), initials: 'HM' },
   ];
 
   return (
@@ -219,12 +253,18 @@ function Testimonials() {
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((t) => (
             <div key={t.name} className="p-8 bg-farm-50 rounded-2xl border border-farm-100 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => <span key={i} className="text-yellow-400 text-lg">★</span>)}
+              <div className="flex items-center gap-2 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
               </div>
-              <p className="text-gray-600 leading-relaxed mb-6 italic">"{t.quote}"</p>
+              <p className="text-gray-600 leading-relaxed mb-6">"{t.quote}"</p>
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{t.emoji}</span>
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-agri-400 to-agri-600 flex items-center justify-center shadow-sm">
+                  <span className="text-sm font-bold text-white">{t.initials}</span>
+                </div>
                 <div>
                   <p className="font-bold text-gray-900">{t.name}</p>
                   <p className="text-sm text-gray-500">{t.role}</p>
