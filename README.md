@@ -33,7 +33,7 @@ npm run dev
 
 | Layer | Technology |
 |---|---|
-| Frontend | React, Tailwind CSS, Leaflet.js, Chart.js |
+| Frontend | React, Tailwind CSS, Leaflet.js |
 | Backend | Node.js, Express |
 | Database | Supabase (PostgreSQL) |
 | Auth | Supabase Auth |

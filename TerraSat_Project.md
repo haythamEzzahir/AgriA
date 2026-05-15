@@ -1,7 +1,6 @@
-# 🛰️ TerraSat — *"We Don't Just Watch Farms. We Watch the Planet."*
+# 🛰️ AgriCopilot (formerly TerraSat) — *Satellite Intelligence for Moroccan Agriculture*
 
-> AI-powered satellite intelligence platform for Moroccan farmers and fishermen.  
-> **Zero hardware. Zero installation. Just your phone.**
+> **Note:** This is the aspirational vision document. The current implementation uses a **Node.js/Express backend** with AgroMonitoring API, OpenWeather, and OpenRouter AI. The Python FastAPI + Sentinel pipeline described below is the planned future architecture.
 
 ---
 
@@ -10,7 +9,7 @@
 1. [Project Overview](#1-project-overview)
 2. [The Problem](#2-the-problem)
 3. [The Solution](#3-the-solution)
-4. [System Architecture](#4-system-architecture)
+4. [System Architecture (Planned)](#4-system-architecture-planned)
 5. [Module 1 — AgroSat (Land)](#5-module-1--agrosat-land)
 6. [Module 2 — OceanSat (Sea)](#6-module-2--oceansat-sea)
 7. [Data Sources](#7-data-sources)
@@ -27,7 +26,7 @@
 
 ## 1. Project Overview
 
-**TerraSat** is a dual-module satellite intelligence platform that solves two of Morocco's most critical resource problems:
+**AgriCopilot** is a satellite intelligence platform that solves two of Morocco's most critical resource problems:
 
 | Module | Target | Problem Solved |
 |--------|--------|----------------|
@@ -637,44 +636,37 @@ When both available (ideal):
 
 ## 10. Tech Stack
 
+> **Current implementation** (MVP delivered in hackathon):
+
 ### Backend
 
 ```
-Language:     Python 3.11
-Framework:    FastAPI
-Satellite:    Google Earth Engine Python API (GEE)
-              rasterio (GeoTiff processing)
-              numpy (array math for index computation)
-              shapely (farm polygon geometry)
-              geopandas (geospatial data handling)
-AI:           Anthropic Claude API (advice generation)
-              scikit-learn (zone classification)
-Weather:      openmeteo-requests (weather forecast)
-Ocean:        motuclient (Copernicus Marine data)
-Database:     MongoDB Atlas (free tier)
-              pymongo (Python MongoDB driver)
-Alerts:       Twilio (WhatsApp) / Resend (email)
+Language:     Node.js 20 (ES modules)
+Framework:    Express.js
+Satellite:    AgroMonitoring API (NDVI/NDWI/temperature/soil moisture)
+AI:           OpenRouter API (Claude 3 Haiku)
+Weather:      OpenWeather API (5-day forecast)
+Database:     Supabase (PostgreSQL)
+Auth:         Supabase Auth (JWT) + demo tokens
 ```
 
 ### Frontend
 
 ```
-Framework:    React 18
+Framework:    React 18 + Vite
 Maps:         Leaflet.js + React-Leaflet
-              GeoJSON for farm/zone polygons
+              3D Globe: globe.gl
 Styling:      Tailwind CSS
-Charts:       Recharts (NDVI/NDMI trends over time)
 State:        React Context + useState
-HTTP:         Axios
-PWA:          Vite PWA plugin (offline support)
-Hosting:      Vercel (free tier)
+HTTP:         Fetch API (native)
+Hosting:      Vite dev server / static build
 ```
 
 ### Infrastructure
 
 ```
-Backend host:   Railway.app (free tier)
-Database:       MongoDB Atlas (free 512MB)
+Backend host:   Node.js server (port 5000)
+Database:       Supabase (PostgreSQL, free tier)
 Satellite data: Google Earth Engine (free for research)
                 Copernicus Data Space (free)
 Domain:         Vercel subdomain (free)
