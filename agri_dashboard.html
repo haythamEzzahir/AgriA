@@ -1,0 +1,256 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .dash { display: flex; height: 620px; background: #0f1a14; color: #e8f0eb; font-family: 'DM Mono', monospace, var(--font-sans); border-radius: 12px; overflow: hidden; }
+  .sidebar { width: 56px; background: #0a120d; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 4px; border-right: 1px solid #1e3324; }
+  .sidebar .logo { width: 34px; height: 34px; background: #2d6a4f; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+  .nav-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; color: #6b9178; font-size: 16px; transition: background 0.15s; }
+  .nav-icon.active { background: #1e3324; color: #74c69d; }
+  .nav-icon:hover { background: #152b1e; color: #95d5b2; }
+  .nav-divider { height: 1px; width: 28px; background: #1e3324; margin: 6px 0; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { padding: 10px 16px; border-bottom: 1px solid #1e3324; display: flex; justify-content: space-between; align-items: center; background: #0b1510; }
+  .topbar-title { font-size: 11px; letter-spacing: 0.12em; color: #6b9178; text-transform: uppercase; }
+  .topbar-right { display: flex; gap: 12px; align-items: center; font-size: 11px; color: #4a7a5a; }
+  .topbar-right span { cursor: pointer; padding: 4px 8px; border-radius: 5px; }
+  .topbar-right span:hover { background: #1e3324; color: #95d5b2; }
+  .content { flex: 1; display: flex; overflow: hidden; }
+  .map-area { flex: 1; position: relative; background: #111e16; overflow: hidden; }
+  .map-bg { width: 100%; height: 100%; background: repeating-linear-gradient(0deg, transparent, transparent 39px, #1a2b1e 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, #1a2b1e 40px); }
+  .map-satellite { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .field-svg { width: 280px; opacity: 0.85; }
+  .map-controls { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .map-btn { width: 28px; height: 28px; background: #0f1a14; border: 1px solid #1e3324; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #74c69d; font-size: 14px; }
+  .map-badge { position: absolute; bottom: 10px; left: 10px; font-size: 10px; color: #4a7a5a; background: #0a120dcc; padding: 3px 8px; border-radius: 4px; }
+  .right-panel { width: 300px; background: #0b1510; border-left: 1px solid #1e3324; display: flex; flex-direction: column; overflow-y: auto; }
+  .panel-section { border-bottom: 1px solid #1e3324; padding: 14px 16px; }
+  .section-label { font-size: 10px; letter-spacing: 0.1em; color: #4a7a5a; text-transform: uppercase; margin-bottom: 10px; }
+  .weather-main { display: flex; align-items: center; justify-content: space-between; }
+  .weather-temp { font-size: 32px; font-weight: 500; color: #d8f3dc; letter-spacing: -0.02em; }
+  .weather-icon { font-size: 28px; color: #74c69d; }
+  .weather-desc { font-size: 12px; color: #6b9178; margin-top: 4px; }
+  .weather-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .w-detail-item { background: #0f1a14; border-radius: 7px; padding: 8px 10px; }
+  .w-detail-label { font-size: 10px; color: #4a7a5a; margin-bottom: 3px; }
+  .w-detail-val { font-size: 15px; color: #95d5b2; font-weight: 500; }
+  .soil-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #1a2b1e; }
+  .soil-row:last-child { border-bottom: none; }
+  .soil-label { font-size: 12px; color: #6b9178; }
+  .soil-val { font-size: 13px; color: #d8f3dc; font-weight: 500; }
+  .soil-bar-wrap { width: 60px; height: 5px; background: #1e3324; border-radius: 3px; overflow: hidden; display: inline-block; margin: 0 8px; }
+  .soil-bar { height: 100%; background: #52b788; border-radius: 3px; }
+  .polygon-list { display: flex; flex-direction: column; gap: 2px; }
+  .polygon-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 7px; cursor: pointer; transition: background 0.12s; }
+  .polygon-item:hover { background: #1a2b1e; }
+  .polygon-item.active { background: #1e3324; border-left: 2px solid #52b788; }
+  .polygon-dot { width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; }
+  .polygon-name { font-size: 13px; color: #b7e4c7; display: flex; align-items: center; }
+  .polygon-ha { font-size: 12px; color: #4a7a5a; }
+  .forecast-area { border-top: 1px solid #1e3324; background: #0b1510; padding: 12px 16px; }
+  .forecast-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .f-tab { font-size: 11px; padding: 4px 10px; border-radius: 5px; cursor: pointer; color: #4a7a5a; }
+  .f-tab.active { background: #1e3324; color: #74c69d; }
+  .forecast-cards { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .forecast-cards::-webkit-scrollbar { height: 3px; }
+  .forecast-cards::-webkit-scrollbar-thumb { background: #1e3324; border-radius: 2px; }
+  .f-card { min-width: 76px; background: #0f1a14; border: 1px solid #1e3324; border-radius: 8px; padding: 8px; text-align: center; flex-shrink: 0; }
+  .f-card.highlight { background: #1e3324; border-color: #2d6a4f; }
+  .f-date { font-size: 10px; color: #4a7a5a; margin-bottom: 6px; }
+  .f-icon { font-size: 18px; color: #74c69d; margin: 4px 0; }
+  .f-desc { font-size: 9px; color: #6b9178; margin-bottom: 4px; }
+  .f-temp { font-size: 13px; color: #95d5b2; font-weight: 500; }
+  .moisture-bar-wrap { margin-top: 4px; height: 3px; background: #1e3324; border-radius: 2px; overflow: hidden; }
+  .moisture-bar { height: 100%; background: #40916c; border-radius: 2px; }
+</style>
+
+<h2 class="sr-only">Agricultural monitoring dashboard showing weather, soil data, field polygons, and daily forecast</h2>
+
+<div class="dash">
+  <div class="sidebar">
+    <div class="logo"><i class="ti ti-leaf" style="font-size:18px;color:#95d5b2" aria-hidden="true"></i></div>
+    <div class="nav-icon active" title="Polygons"><i class="ti ti-vector-triangle" aria-hidden="true"></i></div>
+    <div class="nav-icon" title="List"><i class="ti ti-list" aria-hidden="true"></i></div>
+    <div class="nav-icon" title="Analytics"><i class="ti ti-chart-bar" aria-hidden="true"></i></div>
+    <div class="nav-divider"></div>
+    <div class="nav-icon" title="Temperature"><i class="ti ti-temperature" aria-hidden="true"></i></div>
+    <div class="nav-icon" title="Add"><i class="ti ti-plus" aria-hidden="true"></i></div>
+    <div class="nav-icon" title="Location"><i class="ti ti-map-pin" aria-hidden="true"></i></div>
+    <div class="nav-divider"></div>
+    <div class="nav-icon" title="Settings"><i class="ti ti-settings" aria-hidden="true"></i></div>
+    <div class="nav-icon" title="User"><i class="ti ti-user" aria-hidden="true"></i></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Polygons : Abdu — Weather data</span>
+      <div class="topbar-right">
+        <span>API Keys</span>
+        <span>Subscription</span>
+        <span>Billing</span>
+        <span>Invoices</span>
+        <span style="color:#74c69d">Settings</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="map-area">
+        <div class="map-bg"></div>
+        <div class="map-satellite">
+          <svg class="field-svg" viewBox="0 0 280 260" xmlns="http://www.w3.org/2000/svg">
+            <rect width="280" height="260" fill="#1a2d1e" rx="4"/>
+            <rect x="10" y="120" width="260" height="6" fill="#2d4a35" rx="2"/>
+            <rect x="10" y="180" width="260" height="5" fill="#2d4a35" rx="2"/>
+            <g opacity="0.5">
+              <rect x="20" y="130" width="30" height="45" fill="#3d7a50" rx="1"/>
+              <rect x="55" y="130" width="30" height="45" fill="#2d6a4f" rx="1"/>
+              <rect x="90" y="130" width="30" height="45" fill="#3d7a50" rx="1"/>
+              <rect x="125" y="130" width="30" height="45" fill="#2d6a4f" rx="1"/>
+              <rect x="160" y="130" width="30" height="45" fill="#3d7a50" rx="1"/>
+              <rect x="195" y="130" width="30" height="45" fill="#2d6a4f" rx="1"/>
+              <rect x="230" y="130" width="30" height="45" fill="#3d7a50" rx="1"/>
+            </g>
+            <polygon points="75,20 200,30 210,105 85,120 60,90" fill="#52b78830" stroke="#52b788" stroke-width="1.5" stroke-dasharray="none"/>
+            <polygon points="100,45 185,52 192,95 108,108 88,78" fill="#40916c40" stroke="#40916c" stroke-width="1"/>
+            <circle cx="140" cy="75" r="4" fill="#74c69d"/>
+            <text x="148" y="72" fill="#95d5b2" font-size="9" font-family="monospace">abdu</text>
+            <text x="148" y="82" fill="#52b788" font-size="8" font-family="monospace">2.6ha</text>
+          </svg>
+        </div>
+        <div class="map-controls">
+          <div class="map-btn"><i class="ti ti-plus" aria-hidden="true"></i></div>
+          <div class="map-btn"><i class="ti ti-minus" aria-hidden="true"></i></div>
+          <div class="map-btn" style="margin-top:4px"><i class="ti ti-list" aria-hidden="true"></i></div>
+        </div>
+        <div class="map-badge">⬛ mapbox</div>
+      </div>
+
+      <div class="right-panel">
+        <div class="panel-section">
+          <div class="section-label">Current Weather</div>
+          <div class="weather-main">
+            <div>
+              <div class="weather-temp">14.2°</div>
+              <div class="weather-desc">Overcast clouds · No precipitation</div>
+            </div>
+            <i class="ti ti-cloud weather-icon" aria-hidden="true"></i>
+          </div>
+          <div class="weather-detail">
+            <div class="w-detail-item">
+              <div class="w-detail-label">Humidity</div>
+              <div class="w-detail-val">68%</div>
+            </div>
+            <div class="w-detail-item">
+              <div class="w-detail-label">Wind</div>
+              <div class="w-detail-val">12 km/h</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-label">Current Soil data</div>
+          <div class="soil-row">
+            <span class="soil-label">Temp surface</span>
+            <div><div class="soil-bar-wrap"><div class="soil-bar" style="width:52%"></div></div></div>
+            <span class="soil-val">15.5°</span>
+          </div>
+          <div class="soil-row">
+            <span class="soil-label">Temp at 10cm</span>
+            <div><div class="soil-bar-wrap"><div class="soil-bar" style="width:73%"></div></div></div>
+            <span class="soil-val">21.9°</span>
+          </div>
+          <div class="soil-row">
+            <span class="soil-label">Soil moisture</span>
+            <div><div class="soil-bar-wrap"><div class="soil-bar" style="width:10%"></div></div></div>
+            <span class="soil-val">10%</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-label">All Polygons</div>
+          <div class="polygon-list">
+            <div class="polygon-item active">
+              <span class="polygon-name"><span class="polygon-dot" style="background:#52b788"></span>abdu</span>
+              <span class="polygon-ha">2.6 ha</span>
+            </div>
+            <div class="polygon-item">
+              <span class="polygon-name"><span class="polygon-dot" style="background:#40916c"></span>Ferme d'Ahmed</span>
+              <span class="polygon-ha">2.2 ha</span>
+            </div>
+            <div class="polygon-item">
+              <span class="polygon-name"><span class="polygon-dot" style="background:#2d6a4f"></span>Iowa Demo Field</span>
+              <span class="polygon-ha">203.0 ha</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="forecast-area">
+      <div class="forecast-tabs">
+        <span class="f-tab">Hourly forecast</span>
+        <span class="f-tab active">Daily forecast</span>
+        <span class="f-tab">Historical weather</span>
+        <span class="f-tab">Historical soil</span>
+        <span class="f-tab">Accumulated</span>
+      </div>
+      <div class="forecast-cards">
+        <div class="f-card highlight">
+          <div class="f-date">May 15</div>
+          <i class="ti ti-cloud f-icon" aria-hidden="true"></i>
+          <div class="f-desc">Few clouds</div>
+          <div class="f-temp">23.7°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:25%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 16</div>
+          <i class="ti ti-cloud-rain f-icon" aria-hidden="true"></i>
+          <div class="f-desc">Light rain</div>
+          <div class="f-temp">23.5°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:60%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 17</div>
+          <i class="ti ti-cloud-rain f-icon" aria-hidden="true"></i>
+          <div class="f-desc">Light rain</div>
+          <div class="f-temp">26.3°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:55%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 18</div>
+          <i class="ti ti-cloud-rain f-icon" aria-hidden="true"></i>
+          <div class="f-desc">Light rain</div>
+          <div class="f-temp">27.2°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:50%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 19</div>
+          <i class="ti ti-sun f-icon" style="color:#74c69d" aria-hidden="true"></i>
+          <div class="f-desc">Clear sky</div>
+          <div class="f-temp">32.6°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:5%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 20</div>
+          <i class="ti ti-cloud f-icon" aria-hidden="true"></i>
+          <div class="f-desc">Scattered clouds</div>
+          <div class="f-temp">36.3°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:15%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 21</div>
+          <i class="ti ti-sun f-icon" style="color:#74c69d" aria-hidden="true"></i>
+          <div class="f-desc">Clear sky</div>
+          <div class="f-temp">37.3°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:5%"></div></div>
+        </div>
+        <div class="f-card">
+          <div class="f-date">May 22</div>
+          <i class="ti ti-cloud f-icon" aria-hidden="true"></i>
+          <div class="f-desc">Broken clouds</div>
+          <div class="f-temp">38.3°</div>
+          <div class="moisture-bar-wrap"><div class="moisture-bar" style="width:20%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

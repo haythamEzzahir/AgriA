@@ -1,45 +1,67 @@
 import { Router } from 'express';
+import { supabase, supabaseAnon } from '../config/supabase.js';
 
 const router = Router();
 
+const DEMO_USERS = [
+  { email: 'demo@agricopilot.ma', password: 'demo123', name: 'Ahmed Farmer', id: 'demo-001' },
+  { email: 'fatima@agricopilot.ma', password: 'demo123', name: 'Fatima Grower', id: 'demo-002' },
+];
+
 router.post('/signup', async (req, res) => {
   const { email, password, name } = req.body;
-  const { supabase } = await import('../config/supabase.js');
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-  if (authError) return res.status(400).json({ error: authError.message });
-
-  if (authData.user) {
-    const { error: dbError } = await supabase.from('users').insert({
-      id: authData.user.id,
-      name,
-      email,
-    });
-    if (dbError) return res.status(500).json({ error: dbError.message });
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Email, password, and name are required' });
   }
 
-  res.status(201).json({ user: authData.user, session: authData.session });
+  try {
+    const { data: authData, error: authError } = await supabaseAnon.auth.signUp({ email, password });
+    if (authError) return res.status(400).json({ error: authError.message });
+
+    if (authData.user) {
+      const { error: dbError } = await supabase.from('users').insert({
+        id: authData.user.id,
+        name,
+        email,
+      });
+      if (dbError) return res.status(500).json({ error: dbError.message });
+    }
+
+    res.status(201).json({ user: authData.user, session: authData.session });
+  } catch {
+    res.status(503).json({ error: 'Signup service unreachable. Try again later or use demo accounts.' });
+  }
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const { supabase } = await import('../config/supabase.js');
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return res.status(401).json({ error: error.message });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
 
-  res.json({ user: data.user, session: data.session });
+  const demoUser = DEMO_USERS.find((u) => u.email === email && u.password === password);
+  if (demoUser) {
+    return res.json({
+      user: { id: demoUser.id, email: demoUser.email, name: demoUser.name },
+      session: { access_token: 'demo-token-' + demoUser.id, user: demoUser },
+    });
+  }
+
+  try {
+    const { data, error } = await supabaseAnon.auth.signInWithPassword({ email, password });
+    if (error) return res.status(401).json({ error: error.message });
+    return res.json({ user: data.user, session: data.session });
+  } catch {
+    return res.status(503).json({
+      error: 'Login service unreachable. Use demo accounts: demo@agricopilot.ma / demo123'
+    });
+  }
 });
 
-router.post('/logout', async (req, res) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Missing token' });
-
-  const { supabase } = await import('../config/supabase.js');
-  const { error } = await supabase.auth.admin.signOut(token);
-  if (error) return res.status(500).json({ error: error.message });
-
-  res.json({ message: 'Logged out' });
+router.post('/logout', (_req, res) => {
+  res.json({ message: 'Logged out successfully' });
 });
 
 export default router;

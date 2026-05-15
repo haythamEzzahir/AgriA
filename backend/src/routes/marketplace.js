@@ -1,40 +1,63 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { supabase } from '../config/supabase.js';
+import { DEMO_MARKETPLACE } from '../services/mockData.js';
 
 const router = Router();
 
 router.get('/', async (req, res) => {
   const { category, search } = req.query;
 
-  let query = supabase.from('listings').select('*, users(name, location)');
+  let listings = [...DEMO_MARKETPLACE];
 
-  if (category) query = query.eq('category', category);
-  if (search) query = query.ilike('title', `%${search}%`);
+  if (category && category !== 'all') listings = listings.filter((l) => l.category === category);
+  if (search) listings = listings.filter((l) => l.title.toLowerCase().includes(search.toLowerCase()));
 
-  const { data, error } = await query.order('created_at', { ascending: false });
-
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  res.json(listings);
 });
 
 router.get('/:id', async (req, res) => {
-  const { data, error } = await supabase
-    .from('listings')
-    .select('*, users(name, location)')
-    .eq('id', req.params.id)
-    .single();
-
-  if (error) return res.status(404).json({ error: 'Listing not found' });
-  res.json(data);
+  const listing = DEMO_MARKETPLACE.find((l) => l.id === req.params.id);
+  if (!listing) return res.status(404).json({ error: 'Listing not found' });
+  res.json(listing);
 });
 
 router.post('/', requireAuth, async (req, res) => {
   const { category, title, description, price, photo_url, location } = req.body;
 
+  if (!category || !title) {
+    return res.status(400).json({ error: 'Category and title are required' });
+  }
+
+  const validCategories = ['crops', 'seeds', 'fertilizers', 'equipment', 'services'];
+  if (!validCategories.includes(category)) {
+    return res.status(400).json({ error: 'Invalid category' });
+  }
+
+  if (req.isDemo) {
+    return res.status(201).json({
+      id: 'listing-demo-' + Date.now(),
+      user_id: req.user.id,
+      category, title, description,
+      price: price || null,
+      photo_url: photo_url || null,
+      location: location || null,
+      users: { name: req.user.name || 'Demo User', location: location || '' },
+      created_at: new Date().toISOString(),
+    });
+  }
+
   const { data, error } = await supabase
     .from('listings')
-    .insert({ user_id: req.user.id, category, title, description, price, photo_url, location })
+    .insert({
+      user_id: req.user.id,
+      category,
+      title,
+      description,
+      price: price || null,
+      photo_url: photo_url || null,
+      location: location || null,
+    })
     .select()
     .single();
 
@@ -43,11 +66,20 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 router.put('/:id', requireAuth, async (req, res) => {
+  if (req.isDemo) return res.json({ ...req.body, id: req.params.id, user_id: req.user.id });
+
   const { category, title, description, price, photo_url, location } = req.body;
 
   const { data, error } = await supabase
     .from('listings')
-    .update({ category, title, description, price, photo_url, location, updated_at: new Date() })
+    .update({
+      category,
+      title,
+      description,
+      price,
+      photo_url,
+      location,
+    })
     .eq('id', req.params.id)
     .eq('user_id', req.user.id)
     .select()
@@ -58,6 +90,8 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 router.delete('/:id', requireAuth, async (req, res) => {
+  if (req.isDemo) return res.status(204).end();
+
   const { error } = await supabase
     .from('listings')
     .delete()

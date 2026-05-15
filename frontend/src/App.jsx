@@ -1,33 +1,45 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Layout/Navbar';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import MapView from './pages/MapView';
 import AIAssistant from './pages/AIAssistant';
 import Marketplace from './pages/Marketplace';
 import Auth from './pages/Auth';
-import { useTheme } from './context/ThemeContext';
+import Register from './pages/Register';
 
-function App() {
-  const { pathname } = useLocation();
-  const { isDark } = useTheme();
-  const isMapPage = pathname === '/map';
-
-  return (
-    <div className={isMapPage ? (isDark ? 'min-h-screen bg-slate-950' : 'min-h-screen bg-slate-100') : (isDark ? 'min-h-screen bg-slate-950' : 'min-h-screen bg-gray-50')}>
-      <Navbar />
-      <main className={isMapPage ? 'mx-auto px-0 py-0' : 'max-w-7xl mx-auto px-4 py-6'}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/map" element={<MapView />} />
-          <Route path="/ai" element={<AIAssistant />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </main>
-    </div>
-  );
+function AppLayout({ children }) {
+  return <Navbar>{children}</Navbar>;
 }
 
-export default App;
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/register" element={<Register />} />
+
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <AppLayout><Dashboard /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/map" element={
+        <ProtectedRoute>
+          <AppLayout><MapView /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/ai" element={
+        <ProtectedRoute>
+          <AppLayout><AIAssistant /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/marketplace" element={
+        <AppLayout><Marketplace /></AppLayout>
+      } />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}

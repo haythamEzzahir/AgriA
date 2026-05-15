@@ -1,25 +1,41 @@
 import React from 'react';
+import { useLanguage } from '../../i18n/context';
 
-const recommendations = [
-  'Schedule irrigation before sunrise for the tomato zone.',
-  'Add mulch near exposed rows to slow soil drying.',
-  'Check leaf edges this evening for early heat stress signs.',
-];
+const emojis = {
+  Tomatoes: 'Tom',
+  Peppers: 'Pep',
+  Corn: 'Corn',
+  Sunflowers: 'Sun',
+  Olives: 'Olv',
+  Argan: 'Arg',
+  Potatoes: 'Pot',
+  Carrots: 'Car',
+};
 
-export default function CropRecommendations() {
+export default function CropRecommendations({ crops }) {
+  const { t } = useLanguage();
+
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
-      <h3 className="font-semibold text-gray-800">Crop Recommendations</h3>
-      <div className="mt-4 space-y-3">
-        {recommendations.map((item, index) => (
-          <div key={item} className="flex gap-3 rounded-lg bg-primary-50 p-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-bold text-white">
-              {index + 1}
-            </span>
-            <p className="text-sm leading-6 text-gray-700">{item}</p>
-          </div>
-        ))}
-      </div>
+    <div className="bg-white p-5 rounded-xl shadow-sm border border-farm-100">
+      <h3 className="font-semibold text-gray-800 mb-3">{t('dashboard.crops')}</h3>
+      {!crops?.length ? (
+        <p className="text-gray-400 text-sm">{t('dashboard.noData')}</p>
+      ) : (
+        <div className="space-y-2">
+          {crops.map((crop, i) => (
+            <div key={`${crop.name}-${i}`} className="flex items-center gap-3 p-3 rounded-lg bg-farm-50">
+              <span className="text-xs font-bold text-farm-700 w-9">{emojis[crop.name] || 'Crop'}</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">{crop.name}</span>
+                  <span className="text-sm font-bold text-farm-600">{crop.match}%</span>
+                </div>
+                <p className="text-xs text-gray-400">{crop.reason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

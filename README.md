@@ -223,40 +223,28 @@ Never paste the key in `README.md`, terminal history screenshots, Git commits, o
 Run this once after editing `.env`:
 
 ```bash
-node check-setup.js
+cd frontend
+npm install
+npm run dev
 ```
 
-The script checks:
+## Tech Stack
 
-- `.env` exists
-- `OPENROUTER_API_KEY` is defined
-- the key starts with `sk-or-v1-`
-- OpenRouter accepts the key
-- free models can be fetched
-- a tiny `Hello` completion works
+| Layer | Technology |
+|---|---|
+| Frontend | React, Tailwind CSS, Leaflet.js, Chart.js |
+| Backend | Node.js, Express |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth |
+| Satellite | AgroMonitoring API |
+| Weather | OpenWeather API |
+| AI | OpenRouter (Claude/Mistral) |
 
-Every failing check prints a specific fix command or link.
+## Team Roles
 
-### Common Windows Pitfalls
-
-- `.env.txt`: Windows Notepad can create `.env.txt` while hiding file extensions. In File Explorer, enable `View > Show > File name extensions`, then rename it to `.env`.
-- Wrong folder: run commands from the project root, the folder containing `package.json`. The server startup banner prints the working directory.
-- Spaces around `=`: use `OPENROUTER_API_KEY=sk-or-v1-...`, not `OPENROUTER_API_KEY = sk-or-v1-...`.
-- Quotes around the key: use the raw key without quotes.
-- Extra spaces: do not add spaces before or after the key.
-- Old variable name: use `OPENROUTER_API_KEY`, not `DEEPSEEK_API_KEY`.
-
-### Error Messages
-
-- `❌ OPENROUTER_API_KEY is MISSING. Create .env file with your key from https://openrouter.ai/keys`
-  Create `.env` with `copy .env.example .env`, then paste your key.
-- `❌ OPENROUTER_API_KEY is INVALID. Check it at https://openrouter.ai/keys`
-  The key is missing, malformed, expired, revoked, or rejected by OpenRouter. Create a new key.
-- `⚠️ Server will still start, but /generate-report will fail until OPENROUTER_API_KEY is fixed.`
-  Startup continues so you can test non-LLM routes, but report generation will fail.
-- `🔄 Model not found ... Trying next fallback...`
-  One model returned 404. The app is self-healing and tries the next configured model.
-- `❌ All OpenRouter models failed`
-  The preferred model, built-in fallbacks, and live free-model backup did not produce a completion.
-- `✅ OpenRouter API key loaded and valid (sk-or-v1-****1234)`
-  The server validated your key. The real key is never logged.
+- **R1**: Team Lead + Full Stack
+- **R2**: Frontend (Map & Visualization)
+- **R3**: Frontend (Dashboard & UX)
+- **R4**: AI Integration
+- **R5**: Marketplace
+- **R6**: Auth, DevOps & QA

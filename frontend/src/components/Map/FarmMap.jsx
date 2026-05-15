@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { MapContainer, Marker, Polygon, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Polygon, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet/dist/leaflet.css';
@@ -21,13 +21,20 @@ const fallbackFarm = {
 };
 
 const defaultSatelliteIndicators = {
-  plantHealth: 72,
-  waterLevel: 41,
-  soilMoisture: 34,
-  surfaceTemperature: 39,
-  weatherTemperature: 32,
-  humidity: 46,
-  rainForecast: 12,
+  ndvi: 0.22,
+  ndwi: 0.15,
+  soil_moisture: 0.18,
+  surface_temp: 38.5,
+  temperature: 39,
+  humidity: 25,
+  rain_forecast: 'none',
+  plantHealth: 22,
+  waterLevel: 15,
+  soilMoisture: 18,
+  surfaceTemperature: 38.5,
+  weatherTemperature: 39,
+  humidityScore: 25,
+  rainForecastScore: 0,
 };
 
 const modeKeys = ['risk', 'plant', 'water', 'heat', 'soil'];
@@ -48,7 +55,7 @@ const defaultLabels = {
   surfaceTemperature: 'Surface temperature',
   riskLevel: 'Risk level',
   recommendedAction: 'Recommended action',
-  demoNote: 'Spatial pixel visualization is generated from farm-level satellite indicators for demo purposes.',
+  demoNote: 'Raster visualization is generated from farm-level satellite and weather indicators for demo purposes.',
   analyzingMap: 'Analyzing farm raster from satellite and weather indicators',
   focusParcel: 'Focus Parcel',
   drawParcel: 'Draw Parcel',
@@ -130,7 +137,7 @@ function DrawParcelHandler({ drawToken, onCreated }) {
   return null;
 }
 
-function EditableParcelLayer({ boundary, highlighted, showHealthOverlay, onParcelChange }) {
+function EditableParcelLayer({ boundary, farm, labels, highlighted, showHealthOverlay, onParcelChange }) {
   const map = useMap();
   const layerRef = useRef(null);
   const callbackRef = useRef(onParcelChange);
@@ -146,6 +153,7 @@ function EditableParcelLayer({ boundary, highlighted, showHealthOverlay, onParce
     const pathOptions = {
       color: highlighted ? '#f8fafc' : '#a7f3d0',
       fillColor: '#22c55e',
+      fill: false,
       fillOpacity: showHealthOverlay ? 0.08 : 0.18,
       opacity: 1,
       weight: highlighted ? 4 : 3,
@@ -167,6 +175,13 @@ function EditableParcelLayer({ boundary, highlighted, showHealthOverlay, onParce
       layerRef.current.setStyle(pathOptions);
     }
 
+    layerRef.current.bindPopup(`
+      <div class="space-y-1">
+        <strong>${escapeHtml(farm?.name)}</strong>
+        <div>${escapeHtml(labels?.crop || 'Crop')}: ${escapeHtml(farm?.crop)}</div>
+        <div>${escapeHtml(farm?.location)}</div>
+      </div>
+    `);
     layerRef.current.bringToFront();
     if (layerRef.current.editing && !layerRef.current.editing.enabled()) {
       layerRef.current.editing.enable();
@@ -180,7 +195,7 @@ function EditableParcelLayer({ boundary, highlighted, showHealthOverlay, onParce
         layerRef.current = null;
       }
     };
-  }, [boundary, highlighted, map, showHealthOverlay]);
+  }, [boundary, farm, highlighted, labels, map, showHealthOverlay]);
 
   return null;
 }
@@ -241,6 +256,15 @@ function normalizeFarm(farm) {
   };
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function clamp(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
@@ -250,13 +274,53 @@ function numberOrDefault(value, fallback) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+function coefficientToScore(value, fallback) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return clamp(numeric <= 1 ? numeric * 100 : numeric);
+}
+
+function rainForecastToScore(value) {
+  if (typeof value === 'number') return value <= 1 ? clamp(value * 100) : clamp(value);
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'none' || normalized === 'no rain') return 0;
+    if (normalized === 'light') return 25;
+    if (normalized === 'moderate') return 55;
+    if (normalized === 'heavy') return 85;
+    const numeric = Number(normalized);
+    return Number.isFinite(numeric) ? rainForecastToScore(numeric) : 0;
+  }
+  return 0;
+}
+
 function normalizeIndicators(indicators) {
-  return Object.fromEntries(
-    Object.entries(defaultSatelliteIndicators).map(([key, fallback]) => [
-      key,
-      numberOrDefault(indicators?.[key], fallback),
-    ]),
-  );
+  const source = indicators && typeof indicators === 'object' ? indicators : {};
+  const weather = source.weather && typeof source.weather === 'object' ? source.weather : {};
+  const ndvi = numberOrDefault(source.ndvi, defaultSatelliteIndicators.ndvi);
+  const ndwi = numberOrDefault(source.ndwi, defaultSatelliteIndicators.ndwi);
+  const soilMoistureCoefficient = numberOrDefault(source.soil_moisture, defaultSatelliteIndicators.soil_moisture);
+  const surfaceTemp = numberOrDefault(source.surface_temp ?? source.surfaceTemperature, defaultSatelliteIndicators.surface_temp);
+  const temperature = numberOrDefault(weather.temperature ?? source.temperature ?? source.weatherTemperature, defaultSatelliteIndicators.temperature);
+  const humidity = numberOrDefault(weather.humidity ?? source.humidity ?? source.humidityScore, defaultSatelliteIndicators.humidity);
+  const rainForecast = source.rain_forecast ?? source.rainForecast ?? defaultSatelliteIndicators.rain_forecast;
+
+  return {
+    ndvi,
+    ndwi,
+    soil_moisture: soilMoistureCoefficient,
+    surface_temp: surfaceTemp,
+    temperature,
+    humidity,
+    rain_forecast: rainForecast,
+    plantHealth: coefficientToScore(source.plantHealth ?? ndvi, defaultSatelliteIndicators.plantHealth),
+    waterLevel: coefficientToScore(source.waterLevel ?? ndwi, defaultSatelliteIndicators.waterLevel),
+    soilMoisture: coefficientToScore(source.soilMoisture ?? soilMoistureCoefficient, defaultSatelliteIndicators.soilMoisture),
+    surfaceTemperature: surfaceTemp,
+    weatherTemperature: temperature,
+    humidityScore: coefficientToScore(humidity, defaultSatelliteIndicators.humidityScore),
+    rainForecastScore: rainForecastToScore(rainForecast),
+  };
 }
 
 function smoothField(row, col, rows, cols) {
@@ -300,8 +364,8 @@ function getRecommendation(level, values, labels) {
 }
 
 function waterScale(score) {
-  if (score >= 72) return '#14b8a6';
-  if (score >= 55) return '#84cc16';
+  if (score >= 72) return '#0284c7';
+  if (score >= 55) return '#16a34a';
   if (score >= 38) return '#facc15';
   if (score >= 24) return '#fb923c';
   return '#ef4444';
@@ -396,7 +460,7 @@ function buildIrrigationLines(farm) {
 }
 
 function generateSatellitePixels(farm, indicators, labels) {
-  const safeIndicators = { ...defaultSatelliteIndicators, ...(indicators || {}) };
+  const safeIndicators = normalizeIndicators(indicators);
   const bounds = L.latLngBounds(farm.boundary);
   const south = bounds.getSouth();
   const north = bounds.getNorth();
@@ -432,8 +496,8 @@ function generateSatellitePixels(farm, indicators, labels) {
       const soilMoisture = clamp(safeIndicators.soilMoisture + moisturePocket * 18 - dryStress * 0.72 + ridge * 3);
       const surfaceTemperature = clamp(safeIndicators.surfaceTemperature + dryStress * 0.2 - moisturePocket * 2.4 + ridge * 0.8, 18, 54);
       const weatherTemperature = clamp(safeIndicators.weatherTemperature + edgeHeat * 2.2 + ridge * 0.5, 8, 48);
-      const humidity = clamp(safeIndicators.humidity + moisturePocket * 10 - edgeHeat * 8 + basin * 4);
-      const rainForecast = clamp(safeIndicators.rainForecast + moisturePocket * 5 - edgeHeat * 3);
+      const humidity = clamp(safeIndicators.humidityScore + moisturePocket * 10 - edgeHeat * 8 + basin * 4);
+      const rainForecast = clamp(safeIndicators.rainForecastScore + moisturePocket * 5 - edgeHeat * 3);
       const waterScore = clamp(waterLevel * 0.42 + soilMoisture * 0.42 + rainForecast * 0.16);
       const heatRisk = clamp(((surfaceTemperature - 28) / 18) * 100) * 0.7
         + clamp(((weatherTemperature - 24) / 18) * 100) * 0.3;
@@ -481,6 +545,7 @@ export default function FarmMap({
   highlighted = true,
   satelliteIndicators = defaultSatelliteIndicators,
   analysisMode = 'risk',
+  rasterOpacity = 0.66,
   onAnalysisModeChange,
   labels = defaultLabels,
   isDark = true,
@@ -492,6 +557,7 @@ export default function FarmMap({
     [safeLabels],
   );
   const safeMode = modeKeys.includes(analysisMode) ? analysisMode : 'risk';
+  const safeRasterOpacity = clamp(Number(rasterOpacity), 0.25, 0.9);
   const safeIndicators = useMemo(() => normalizeIndicators(satelliteIndicators), [satelliteIndicators]);
   const normalizedFarm = useMemo(() => normalizeFarm(farm), [farm]);
   const markerIcon = useMemo(() => createFarmMarker(normalizedFarm), [normalizedFarm]);
@@ -566,28 +632,18 @@ export default function FarmMap({
               pathOptions={{
                 color: colorForMode(cell, safeMode),
                 fillColor: colorForMode(cell, safeMode),
-                fillOpacity: 0.66,
-                opacity: 0.86,
+                fillOpacity: safeRasterOpacity,
+                opacity: Math.min(0.95, safeRasterOpacity + 0.2),
                 weight: 0.8,
                 className: `satellite-pixel-cell satellite-pixel-delay-${index % 20}`,
               }}
-            >
-              <Tooltip direction="top" sticky opacity={0.98} className="satellite-pixel-tooltip">
-                <div className="space-y-1">
-                  <p className="font-bold text-slate-950">{mapLabels.zoneId}: Z-{String(index + 1).padStart(3, '0')}</p>
-                  <div>{mapLabels.plantHealthScore}: {Math.round(cell.values.plantHealth)}%</div>
-                  <div>{mapLabels.waterScore}: {Math.round(cell.values.waterScore)}%</div>
-                  <div>{mapLabels.soilMoisture}: {Math.round(cell.values.soilMoisture)}%</div>
-                  <div>{mapLabels.surfaceTemperature}: {cell.values.surfaceTemperature.toFixed(1)} C</div>
-                  <div>{mapLabels.riskLevel}: <strong className="capitalize">{mapLabels[cell.level] || cell.level}</strong></div>
-                  <div className="max-w-[250px] text-slate-600">{mapLabels.recommendedAction}: {cell.recommendation}</div>
-                </div>
-              </Tooltip>
-            </Polygon>
+            />
           ))}
 
         <EditableParcelLayer
           boundary={normalizedFarm.boundary}
+          farm={normalizedFarm}
+          labels={mapLabels}
           highlighted={highlighted}
           showHealthOverlay={showHealthOverlay}
           onParcelChange={onParcelChange}
@@ -603,54 +659,6 @@ export default function FarmMap({
           </Popup>
         </Marker>
       </MapContainer>
-
-      <div className={isDark ? 'pointer-events-none absolute left-4 top-4 z-[500] max-w-[340px] rounded-md border border-white/20 bg-slate-950/80 px-4 py-3 text-white shadow-2xl backdrop-blur' : 'pointer-events-none absolute left-4 top-4 z-[500] max-w-[340px] rounded-md border border-slate-200 bg-white/90 px-4 py-3 text-slate-950 shadow-xl backdrop-blur'}>
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-500">{mapLabels.selectedParcel}</p>
-        <p className="mt-1 text-sm font-semibold">{normalizedFarm.name}</p>
-        <p className={isDark ? 'text-xs text-slate-300' : 'text-xs text-slate-600'}>{normalizedFarm.crop} - {normalizedFarm.location}</p>
-      </div>
-
-      <div className={isDark ? 'absolute right-4 top-4 z-[500] w-[min(320px,calc(100%-2rem))] rounded-md border border-white/20 bg-slate-950/90 p-3 text-white shadow-2xl backdrop-blur' : 'absolute right-4 top-4 z-[500] w-[min(320px,calc(100%-2rem))] rounded-md border border-slate-200 bg-white/90 p-3 text-slate-950 shadow-xl backdrop-blur'}>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">{mapLabels.rasterLayer}</p>
-        <div className="grid grid-cols-2 gap-2">
-          {modeKeys.map((modeKey) => (
-            <button
-              key={modeKey}
-              type="button"
-              onClick={() => onAnalysisModeChange?.(modeKey)}
-              className={`rounded-md border px-3 py-2 text-start text-xs font-semibold transition ${
-                safeMode === modeKey
-                  ? isDark
-                    ? 'border-emerald-300 bg-emerald-400/20 text-emerald-50 shadow-lg shadow-emerald-500/20'
-                    : 'border-emerald-500 bg-emerald-50 text-emerald-800 shadow-sm'
-                  : isDark
-                    ? 'border-white/10 bg-white/[0.08] text-slate-200 hover:border-white/25 hover:bg-white/[0.14]'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {mapLabels.modes[modeKey]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {showHealthOverlay && (
-        <div className={isDark ? 'pointer-events-none absolute bottom-4 left-4 z-[500] w-[min(390px,calc(100%-2rem))] rounded-md border border-white/20 bg-slate-950/90 px-4 py-3 text-xs text-white shadow-2xl backdrop-blur' : 'pointer-events-none absolute bottom-4 left-4 z-[500] w-[min(390px,calc(100%-2rem))] rounded-md border border-slate-200 bg-white/90 px-4 py-3 text-xs text-slate-900 shadow-xl backdrop-blur'}>
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-semibold">{mapLabels.modes[safeMode]} {mapLabels.legend}</p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{mapLabels.liveRaster}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <span className="flex items-center gap-2"><span className="legend-swatch bg-[#22c55e]" /> {mapLabels.lowRisk}</span>
-            <span className="flex items-center gap-2"><span className="legend-swatch bg-[#facc15]" /> {mapLabels.moderate}</span>
-            <span className="flex items-center gap-2"><span className="legend-swatch bg-[#fb923c]" /> {mapLabels.warning}</span>
-            <span className="flex items-center gap-2"><span className="legend-swatch bg-[#ef4444]" /> {mapLabels.critical}</span>
-          </div>
-          <p className="mt-3 text-[11px] leading-4 text-slate-500">
-            {mapLabels.demoNote}
-          </p>
-        </div>
-      )}
 
       {isAnalyzing && (
         <div className="pointer-events-none absolute inset-0 z-[600] overflow-hidden bg-slate-950/10">

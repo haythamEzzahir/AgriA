@@ -1,30 +1,45 @@
 import React from 'react';
+import { useLanguage } from '../../i18n/context';
 
-const metrics = [
-  { label: 'Soil moisture', value: '42%', tone: 'bg-blue-500' },
-  { label: 'Vegetation health', value: '68%', tone: 'bg-emerald-500' },
-  { label: 'Heat risk', value: 'Medium', tone: 'bg-amber-500' },
-];
+export default function GroundQuality({ ndviData }) {
+  const { t } = useLanguage();
 
-export default function GroundQuality() {
+  const ndvi = ndviData?.ndvi;
+  const soilMoisture = ndviData?.soil_moisture;
+
+  const hydration = soilMoisture != null ? Math.round(soilMoisture * 100) : null;
+  const vegetation = ndvi != null ? Math.round(ndvi * 100) : null;
+  const stressLevel = ndvi != null ? Math.round((1 - ndvi) * 100) : null;
+
+  const metrics = [
+    { labelKey: 'hydration', value: hydration ?? 0, color: 'bg-blue-500', available: hydration != null },
+    { labelKey: 'vegetation', value: vegetation ?? 0, color: 'bg-emerald-500', available: vegetation != null },
+    { labelKey: 'stressLevel', value: stressLevel ?? 0, color: 'bg-red-500', available: stressLevel != null },
+  ];
+
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-800">Ground Quality</h3>
-        <span className="rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-800">
-          Live snapshot
-        </span>
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-            <div className={`mb-3 h-2 rounded-full ${metric.tone}`} />
-            <p className="text-sm text-gray-500">{metric.label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{metric.value}</p>
-          </div>
-        ))}
-      </div>
+    <div className="bg-white p-5 rounded-xl shadow-sm border border-farm-100">
+      <h3 className="font-semibold text-gray-800 mb-4">{t('dashboard.groundQuality')}</h3>
+      {metrics.every((m) => !m.available) ? (
+        <p className="text-gray-400 text-sm">{t('dashboard.noData')}</p>
+      ) : (
+        <div className="space-y-4">
+          {metrics.map((m) => (
+            <div key={m.labelKey}>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">{t(`dashboard.${m.labelKey}`)}</span>
+                <span className="font-medium">{m.available ? `${m.value}%` : 'N/A'}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${m.color} transition-all duration-500`}
+                  style={{ width: `${m.available ? m.value : 0}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
