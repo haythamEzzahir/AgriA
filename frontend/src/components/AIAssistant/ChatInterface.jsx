@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../i18n/context';
+import { ai, farms } from '../../services/api';
 
 export default function ChatInterface() {
   const { t } = useLanguage();
@@ -8,28 +9,30 @@ export default function ChatInterface() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [farmId, setFarmId] = useState(null);
+
+  useEffect(() => {
+    farms.list().then((data) => {
+      if (data?.length > 0) setFarmId(data[0].id);
+    }).catch(() => {});
+  }, []);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !farmId) return;
 
     const userMsg = { role: 'user', text: input };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
-    setMessages((prev) => [...prev, { role: 'assistant', text: t('ai.thinking') }]);
-
-    setTimeout(() => {
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: 'assistant',
-          text: 'Based on your farm data, NDVI is at 0.42 which indicates moderate vegetation health. Soil moisture is at 28% — consider irrigating within 2 days if no rain is forecast.',
-        };
-        return updated;
-      });
+    try {
+      const res = await ai.explain({ farmId, question: input });
+      setMessages((prev) => [...prev, { role: 'assistant', text: res.response }]);
+    } catch (err) {
+      setMessages((prev) => [...prev, { role: 'assistant', text: `Error: ${err.message}` }]);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -58,7 +61,7 @@ export default function ChatInterface() {
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder={t('ai.placeholder')}
           className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:border-gray-900 focus:outline-none" />
-        <button onClick={sendMessage} disabled={loading}
+        <button onClick={sendMessage} disabled={loading || !farmId}
           className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm hover:bg-gray-800 disabled:opacity-50 transition">
           {t('ai.send')}
         </button>
