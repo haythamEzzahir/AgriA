@@ -172,6 +172,36 @@ Supported report languages:
 - `french`
 - `english`
 
+## Smart Farmer Communication Flow
+
+The frontend includes a free demo-only smart communication simulation on the AI Assistant page. It does not use Twilio, paid phone APIs, or any backend calling service.
+
+Flow:
+
+1. The user clicks `📞 الاتصال بالفلاح`.
+2. The UI shows `📞 جاري الاتصال بالفلاح...` with a ringing phone animation for 5 seconds.
+3. The frontend randomly simulates one of two outcomes:
+   - `الفلاح جاوب`: the browser reads the agriculture report aloud during the fake call.
+   - `الفلاح ماجاوبش`: the UI shows `🎤 جاري إرسال رسالة صوتية ذكية...` and reads the same report aloud as a smart voice message.
+4. After the voice finishes, the frontend always sends the written follow-up report and displays `📩 تم إرسال التقرير للفلاح`.
+5. The farmer message preview uses Moroccan Darija written in Arabic letters:
+
+```text
+📌 الملاحظة
+الطماطم باينة محتاجة شوية ديال الما والتراب ناشف.
+
+🌱 النصيحة
+من الأحسن تسقي بكري فالصباح ولا مع العشية.
+```
+
+The demo also includes:
+
+- `🔊 إعادة الاستماع للنصيحة`
+- `📧 إرسال عبر الإيميل`
+- `📱 إرسال كرسالة`
+
+All voice playback uses the browser's free `SpeechSynthesis` API. Email and message sending are UI simulations only.
+
 ## 🚨 Troubleshooting
 
 ### Get an OpenRouter API Key
