@@ -9,10 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< feature/structure-initiale
     "@supabase/supabase-js": "^2.46.1",
     "@vitejs/plugin-react": "^4.3.4",
     "agricopilot-ai": "file:..",
     "globe.gl": "^2.45.3",
+=======
+    "@supabase/supabase-js": "^2.45.0",
+    "globe.gl": "^2.46.0",
+>>>>>>> main
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "react": "^18.3.1",

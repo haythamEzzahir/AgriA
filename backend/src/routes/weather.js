@@ -19,8 +19,7 @@ router.get('/forecast', async (req, res) => {
     return res.json(forecast);
   } catch (err) {
     console.warn('Weather API failed, using mock:', err.message);
-    if (req.isDemo) return res.json(DEMO_WEATHER);
-    return res.status(502).json({ error: 'Weather service unavailable' });
+    return res.json(DEMO_WEATHER);
   }
 });
 

@@ -14,6 +14,7 @@ import alertsRoutes from './routes/alerts.js';
 import recommendationsRoutes from './routes/recommendations.js';
 import registerRoutes from './routes/register.js';
 import soilRoutes from './routes/soil.js';
+import analyzeRoutes from './routes/analyze.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/soil', soilRoutes);
+app.use('/api/analyze', analyzeRoutes);
 
 app.get('/api/health', (_, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
