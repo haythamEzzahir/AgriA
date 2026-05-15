@@ -16,6 +16,10 @@ export const config = {
   },
   openRouter: {
     apiKey: process.env.OPENROUTER_API_KEY,
-    model: process.env.OPENROUTER_MODEL || 'claude-3-haiku',
+    model: process.env.OPENROUTER_MODEL || 'openrouter/free',
+    fallbackModels: (process.env.OPENROUTER_FALLBACK_MODELS || '')
+      .split(',')
+      .map((model) => model.trim())
+      .filter(Boolean),
   },
 };
