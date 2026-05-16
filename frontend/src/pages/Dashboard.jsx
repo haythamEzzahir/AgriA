@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../i18n/context';
 import { farms, ndvi, weather, soil, alerts, recommendations, analyze } from '../services/api';
@@ -9,6 +9,24 @@ function daysFromNow(n) {
   const d = new Date();
   d.setDate(d.getDate() + n);
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function generateMockPixels(centerLat, centerLng) {
+  const span = 0.006;
+  const count = 600;
+  const pixels = [];
+  for (let i = 0; i < count; i++) {
+    const latOff = (Math.random() - 0.5) * span;
+    const lngOff = (Math.random() - 0.5) * span;
+    const cx = Math.floor(Math.random() * 4);
+    const cy = Math.floor(Math.random() * 4);
+    const base = ((cx + cy) / 8) * 0.55 + 0.1;
+    const noise = (Math.random() - 0.5) * 0.18;
+    const ndvi = Math.max(-0.1, Math.min(0.85, base + noise));
+    const ndwi = Math.max(-0.4, Math.min(0.5, base - 0.25 + (Math.random() - 0.5) * 0.2));
+    pixels.push({ lat: centerLat + latOff, lng: centerLng + lngOff, ndvi, ndwi });
+  }
+  return pixels;
 }
 
 function StatusBadge({ count, label, color }) {
@@ -137,6 +155,25 @@ export default function Dashboard() {
   const farmPolygon = farm?.polygon;
   const farmCenter = farm?.latitude ? [farm.latitude, farm.longitude] : null;
 
+  const mockPixels = useMemo(() => {
+    if (!farm?.latitude || !farm?.longitude) return [];
+    return generateMockPixels(farm.latitude, farm.longitude);
+  }, [farm?.latitude, farm?.longitude]);
+
+  const mockBbox = useMemo(() => {
+    if (!mockPixels.length) return null;
+    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    for (const p of mockPixels) {
+      if (p.lng < minLng) minLng = p.lng;
+      if (p.lng > maxLng) maxLng = p.lng;
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+    }
+    const padLng = (maxLng - minLng) * 0.1;
+    const padLat = (maxLat - minLat) * 0.1;
+    return [minLng - padLng, minLat - padLat, maxLng + padLng, maxLat + padLat];
+  }, [mockPixels]);
+
   return (
     <div className="flex flex-col h-full gap-4" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Top bar */}
@@ -166,44 +203,23 @@ export default function Dashboard() {
       <div className="flex flex-1 gap-4 min-h-0">
         {/* Map */}
         <div className="flex-1 rounded-lg bg-agri-800 border border-agri-700 overflow-hidden relative">
-          {analysis ? (
-            <FarmSatelliteMap
-              heatmapUrl={analysis?.imagery?.heatmap?.ndvi}
-              heatmapBbox={analysis?.imagery?.heatmap?.bbox}
-              pixels={pixels}
-              farmPolygon={farmPolygon}
-              farmCenter={farmCenter}
-              satelliteDate={analysis?.satellite_date}
-            />
-          ) : (
-            <>
-              <div className="absolute inset-0" style={{
-                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 39px, #1a2b1e 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, #1a2b1e 40px)',
-              }} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-48 h-48 mx-auto rounded-full bg-agri-700/50 flex items-center justify-center mb-3">
-                    <span className="text-6xl">🛰️</span>
-                  </div>
-                  <p className="text-agri-400 text-sm font-medium">{farm.name}</p>
-                  <p className="text-agri-500 text-xs mt-1">
-                    {farm.size} · {farm.crops?.join(', ') || 'No crops'} · {farm.custom_area || '—'} ha
-                  </p>
-                  <div className="flex gap-4 justify-center mt-3 text-xs text-agri-500">
-                    <span>NDVI: <span className="text-agri-300 font-medium">{ndviVal != null ? ndviVal.toFixed(2) : '—'}</span></span>
-                    <span>Moisture: <span className="text-agri-300 font-medium">{soilMoisture != null ? Math.round(soilMoisture * 100) + '%' : '—'}</span></span>
-                    <span>Temp: <span className="text-agri-300 font-medium">{temp != null ? temp + '°' : '—'}</span></span>
-                  </div>
-                  <button
-                    onClick={runAnalysis}
-                    disabled={analysisLoading}
-                    className="mt-4 px-4 py-2 bg-agri-500 text-white rounded text-xs font-medium hover:bg-agri-400 transition"
-                  >
-                    {analysisLoading ? 'Analyzing...' : '🚀 Run Satellite Analysis'}
-                  </button>
-                </div>
-              </div>
-            </>
+          <FarmSatelliteMap
+            heatmapUrl={analysis?.imagery?.heatmap?.ndvi}
+            heatmapBbox={analysis?.imagery?.heatmap?.bbox || mockBbox}
+            pixels={analysis?.pixels || mockPixels}
+            farmPolygon={farmPolygon}
+            farmCenter={farmCenter}
+            satelliteDate={analysis?.satellite_date}
+          />
+          {!analysis && !analysisLoading && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000]">
+              <button
+                onClick={runAnalysis}
+                className="px-4 py-2 bg-agri-500 text-white rounded text-xs font-medium hover:bg-agri-400 transition shadow-lg"
+              >
+                🚀 Run Satellite Analysis
+              </button>
+            </div>
           )}
           {analysisLoading && (
             <div className="absolute inset-0 bg-agri-900/60 flex items-center justify-center z-[2000]">
