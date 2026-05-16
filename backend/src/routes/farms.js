@@ -43,14 +43,17 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { name, polygon, size, crops, irrigation } = req.body;
+  const { name, polygon, size, crops, irrigation, latitude, longitude } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: 'Farm name is required' });
   }
 
   if (req.isDemo) {
-    return res.status(201).json({ id: 'farm-demo-new', name, polygon, size, crops, irrigation, user_id: req.user.id });
+    return res.status(201).json({
+      id: 'farm-demo-new', name, polygon, size, crops, irrigation,
+      latitude, longitude, user_id: req.user.id,
+    });
   }
 
   const { data, error } = await supabase
@@ -62,6 +65,8 @@ router.post('/', async (req, res) => {
       size,
       crops,
       irrigation,
+      latitude,
+      longitude,
     })
     .select()
     .single();

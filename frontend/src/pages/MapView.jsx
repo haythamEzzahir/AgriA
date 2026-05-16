@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FarmMap from '../components/Map/FarmMap';
+import FarmSelector from '../components/FarmSelector';
 import { farms, analyze } from '../services/api';
+import {
+  getCachedAnalysis,
+  setCachedAnalysis,
+  invalidateAnalysisCache,
+  getSelectedFarmId,
+  setSelectedFarmId,
+} from '../services/analysisCache';
 
 export default function MapView() {
+  const [farmsList, setFarmsList] = useState([]);
+  const [selectedFarmId, setSelectedFarmIdState] = useState(() => getSelectedFarmId());
   const [farm, setFarm] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -11,29 +21,60 @@ export default function MapView() {
   const [layer, setLayer] = useState('ndvi');
   const [opacity, setOpacity] = useState(0.7);
 
+  // Fetch farms list on mount
   useEffect(() => {
     (async () => {
       try {
         const list = await farms.list();
+        setFarmsList(list || []);
         if (!list?.length) { setLoading(false); return; }
-        const current = list[0];
-        setFarm(current);
-        setAnalysisLoading(true);
-        try {
-          const result = await analyze.run(current.id);
-          setAnalysis(result);
-        } catch (err) {
-          setError(err.message || 'Analysis failed');
-        } finally {
-          setAnalysisLoading(false);
-        }
+        const stored = getSelectedFarmId();
+        const initial = (stored && list.find((f) => f.id === stored)) ? stored : list[0].id;
+        setSelectedFarmIdState(initial);
+        setSelectedFarmId(initial);
       } catch (err) {
         setError(err.message);
-      } finally {
         setLoading(false);
       }
     })();
   }, []);
+
+  const runAnalysis = useCallback(async (farmId, force = false) => {
+    if (!farmId) return;
+
+    if (!force) {
+      const cached = getCachedAnalysis(farmId);
+      if (cached) {
+        setAnalysis(cached);
+        return;
+      }
+    } else {
+      invalidateAnalysisCache(farmId);
+    }
+
+    setAnalysisLoading(true);
+    setError('');
+    try {
+      const result = await analyze.run(farmId);
+      setAnalysis(result);
+      setCachedAnalysis(farmId, result);
+    } catch (err) {
+      setError(err.message || 'Analysis failed');
+    } finally {
+      setAnalysisLoading(false);
+    }
+  }, []);
+
+  // Whenever selected farm changes, swap and run analysis (cache-first)
+  useEffect(() => {
+    if (!selectedFarmId || !farmsList.length) return;
+    const current = farmsList.find((f) => f.id === selectedFarmId);
+    if (!current) return;
+    setFarm(current);
+    setAnalysis(null);
+    setLoading(false);
+    runAnalysis(current.id, false);
+  }, [selectedFarmId, farmsList, runAnalysis]);
 
   if (loading) {
     return (
@@ -48,7 +89,17 @@ export default function MapView() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center max-w-md">
           <span className="text-5xl block mb-4">🗺️</span>
-          <p className="text-agri-500 text-sm">Set up a farm first to see it on the map.</p>
+          <p className="text-agri-500 text-sm mb-4">Set up a farm first to see it on the map.</p>
+          <FarmSelector
+            farms={farmsList}
+            selectedId={selectedFarmId}
+            onSelect={(id) => { setSelectedFarmIdState(id); setSelectedFarmId(id); }}
+            onAdd={(created) => {
+              setFarmsList((prev) => [...prev, created]);
+              setSelectedFarmIdState(created.id);
+              setSelectedFarmId(created.id);
+            }}
+          />
         </div>
       </div>
     );
@@ -70,14 +121,33 @@ export default function MapView() {
 
       {/* Floating control panel */}
       <section className="absolute top-4 right-4 z-[700] w-[min(20rem,calc(100%-2rem))] rounded-md border border-white/15 bg-slate-950/90 text-white p-4 shadow-2xl backdrop-blur">
-        <div className="mb-3">
-          <h2 className="text-sm font-bold">{farm.name}</h2>
-          <p className="mt-0.5 text-xs text-slate-400">
-            {analysis?.satellite_date
-              ? `Sentinel-2 · ${new Date(analysis.satellite_date).toLocaleDateString()}`
-              : 'Waiting for satellite data…'}
-          </p>
-          {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <FarmSelector
+              farms={farmsList}
+              selectedId={selectedFarmId}
+              onSelect={(id) => { setSelectedFarmIdState(id); setSelectedFarmId(id); }}
+              onAdd={(created) => {
+                setFarmsList((prev) => [...prev, created]);
+                setSelectedFarmIdState(created.id);
+                setSelectedFarmId(created.id);
+              }}
+            />
+            <p className="mt-0.5 text-xs text-slate-400">
+              {analysis?.satellite_date
+                ? `Sentinel-2 · ${new Date(analysis.satellite_date).toLocaleDateString()}`
+                : 'Waiting for satellite data…'}
+            </p>
+            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+          </div>
+          <button
+            onClick={() => runAnalysis(farm.id, true)}
+            disabled={analysisLoading}
+            className="text-[10px] text-slate-400 hover:text-emerald-400 disabled:text-slate-600 transition"
+            title="Re-analyze (bypass cache)"
+          >
+            🔄
+          </button>
         </div>
 
         <label className="block">

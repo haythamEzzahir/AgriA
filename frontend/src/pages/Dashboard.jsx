@@ -4,6 +4,14 @@ import { useLanguage } from '../i18n/context';
 import { farms, ndvi, weather, soil, alerts, recommendations, analyze } from '../services/api';
 import FarmSatelliteMap from '../components/Dashboard/FarmSatelliteMap';
 import HistoryChart from '../components/Dashboard/HistoryChart';
+import FarmSelector from '../components/FarmSelector';
+import {
+  getCachedAnalysis,
+  setCachedAnalysis,
+  invalidateAnalysisCache,
+  getSelectedFarmId,
+  setSelectedFarmId,
+} from '../services/analysisCache';
 
 function daysFromNow(n) {
   const d = new Date();
@@ -24,6 +32,8 @@ function StatusBadge({ count, label, color }) {
 
 export default function Dashboard() {
   const { t, isRTL } = useLanguage();
+  const [farmsList, setFarmsList] = useState([]);
+  const [selectedFarmId, setSelectedFarmIdState] = useState(() => getSelectedFarmId());
   const [farm, setFarm] = useState(null);
   const [ndviData, setNdviData] = useState(null);
   const [alertList, setAlertList] = useState([]);
@@ -38,15 +48,38 @@ export default function Dashboard() {
   const [analysisError, setAnalysisError] = useState('');
   const [historyData, setHistoryData] = useState(null);
 
+  // Fetch farms list once on mount
   useEffect(() => {
     (async () => {
       try {
-        const farmList = await farms.list();
-        if (!farmList?.length) { setLoading(false); return; }
+        const list = await farms.list();
+        setFarmsList(list || []);
+        if (!list?.length) { setLoading(false); return; }
+        const stored = getSelectedFarmId();
+        const initial = (stored && list.find((f) => f.id === stored)) ? stored : list[0].id;
+        setSelectedFarmIdState(initial);
+        setSelectedFarmId(initial);
+      } catch (err) {
+        console.error('Farms load error:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-        const currentFarm = farmList[0];
-        setFarm(currentFarm);
+  // Whenever selected farm changes, swap and refetch side data
+  useEffect(() => {
+    if (!selectedFarmId || !farmsList.length) return;
+    const currentFarm = farmsList.find((f) => f.id === selectedFarmId);
+    if (!currentFarm) return;
 
+    setFarm(currentFarm);
+    setAnalysis(null);
+    setAnalysisError('');
+    setLoading(true);
+
+    (async () => {
+      try {
         const [ndviResult, alertResult, recResult, soilResult, histResult] = await Promise.allSettled([
           ndvi.get(currentFarm.id).catch(() => null),
           alerts.list(currentFarm.id).catch(() => []),
@@ -66,22 +99,31 @@ export default function Dashboard() {
             .then(setForecast)
             .catch(() => {});
         }
-      } catch (err) {
-        console.error('Dashboard load error:', err);
-        setError(err.message);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [selectedFarmId, farmsList]);
 
-  const runAnalysis = useCallback(async () => {
+  const runAnalysis = useCallback(async (force = false) => {
     if (!farm) return;
+
+    if (!force) {
+      const cached = getCachedAnalysis(farm.id);
+      if (cached) {
+        setAnalysis(cached);
+        return;
+      }
+    } else {
+      invalidateAnalysisCache(farm.id);
+    }
+
     setAnalysisLoading(true);
     setAnalysisError('');
     try {
       const result = await analyze.run(farm.id);
       setAnalysis(result);
+      setCachedAnalysis(farm.id, result);
     } catch (err) {
       console.error('Analysis failed:', err);
       setAnalysisError(err.message || 'Analysis failed');
@@ -145,7 +187,16 @@ export default function Dashboard() {
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-bold text-agri-50">{farm.name}</h1>
+          <FarmSelector
+            farms={farmsList}
+            selectedId={selectedFarmId}
+            onSelect={(id) => { setSelectedFarmIdState(id); setSelectedFarmId(id); }}
+            onAdd={(created) => {
+              setFarmsList((prev) => [...prev, created]);
+              setSelectedFarmIdState(created.id);
+              setSelectedFarmId(created.id);
+            }}
+          />
           {analysis?.satellite_date && (
             <span className="text-[10px] text-agri-500 bg-agri-800 px-2 py-0.5 rounded">
               🛰️ {new Date(analysis.satellite_date).toLocaleDateString()}
@@ -153,7 +204,7 @@ export default function Dashboard() {
           )}
         </div>
         <button
-          onClick={runAnalysis}
+          onClick={() => runAnalysis(true)}
           disabled={analysisLoading}
           className="px-3 py-1.5 bg-agri-600 hover:bg-agri-500 disabled:bg-agri-700 text-agri-200 text-xs rounded transition flex items-center gap-1.5"
         >

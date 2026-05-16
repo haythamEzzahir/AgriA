@@ -73,7 +73,12 @@ export default function FarmMap({ farm, analysis, layer = 'ndvi', opacity = 0.7 
       {polygonLatLngs && <FitToPolygon positions={polygonLatLngs} />}
 
       {heatmapUrl && heatmapBounds && (
-        <ImageOverlay key={layer} url={heatmapUrl} bounds={heatmapBounds} opacity={opacity} />
+        <ImageOverlay
+          key={layer}
+          url={heatmapUrl}
+          bounds={heatmapBounds}
+          opacity={opacity}
+        />
       )}
 
       {polygonLatLngs && (
