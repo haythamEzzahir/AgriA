@@ -6,7 +6,7 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import MapView from './pages/MapView';
 import AIAssistant from './pages/AIAssistant';
-import Marketplace from './pages/Marketplace';
+import Community from './pages/Community';
 import Auth from './pages/Auth';
 import Register from './pages/Register';
 
@@ -36,9 +36,7 @@ export default function App() {
           <AppLayout><AIAssistant /></AppLayout>
         </ProtectedRoute>
       } />
-      <Route path="/marketplace" element={
-        <AppLayout><Marketplace /></AppLayout>
-      } />
+      <Route path="/community" element={<Community />} />
     </Routes>
   );
 }
