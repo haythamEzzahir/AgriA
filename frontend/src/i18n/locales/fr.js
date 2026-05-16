@@ -5,6 +5,7 @@ export default {
     map: 'Carte',
     ai: 'Assistant IA',
     marketplace: 'Marché',
+    community: 'Communauté',
     signIn: 'Connexion',
     signOut: 'Déconnexion',
     getStarted: 'Commencer',

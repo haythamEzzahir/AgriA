@@ -7,7 +7,7 @@ import { useAuth } from '../../services/AuthContext';
 const sidebarLinks = [
   { to: '/dashboard', icon: 'D', key: 'dashboard' },
   { to: '/map', icon: 'M', key: 'map' },
-  { to: '/marketplace', icon: 'S', key: 'marketplace' },
+  { to: '/community', icon: 'C', key: 'community' },
 ];
 
 const bottomLinks = [
@@ -30,7 +30,7 @@ export default function Navbar({ children }) {
     '/dashboard': t('nav.dashboard', 'Dashboard'),
     '/map': t('nav.map', 'Map View'),
     '/ai': t('nav.ai', 'AI Assistant'),
-    '/marketplace': t('nav.marketplace', 'Marketplace'),
+    '/community': t('nav.community', 'Community'),
   }[pathname] || t('nav.dashboard', 'Dashboard');
 
   const sidebarBase = isDark

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.1",
+    "@vitejs/plugin-react": "^4.7.0",
     "globe.gl": "^2.46.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",

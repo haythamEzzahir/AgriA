@@ -5,6 +5,7 @@ export default {
     map: 'Map',
     ai: 'AI Assistant',
     marketplace: 'Marketplace',
+    community: 'Community',
     signIn: 'Sign In',
     signOut: 'Sign Out',
     getStarted: 'Get Started',

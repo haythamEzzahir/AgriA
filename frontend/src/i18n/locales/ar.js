@@ -5,6 +5,7 @@ export default {
     map: 'الخريطة',
     ai: 'المساعد الذكي',
     marketplace: 'السوق',
+    community: 'المجتمع',
     signIn: 'تسجيل الدخول',
     signOut: 'تسجيل الخروج',
     getStarted: 'ابدأ الآن',
