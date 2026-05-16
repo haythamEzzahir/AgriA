@@ -5,7 +5,6 @@ export default function GroundQuality({ ndviData }) {
   const { t } = useLanguage();
 
   const ndvi = ndviData?.ndvi;
-  const ndwi = ndviData?.ndwi;
   const soilMoisture = ndviData?.soil_moisture;
 
   const hydration = soilMoisture != null ? Math.round(soilMoisture * 100) : null;
@@ -32,8 +31,10 @@ export default function GroundQuality({ ndviData }) {
                 <span className="font-medium">{m.available ? `${m.value}%` : 'N/A'}</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2">
-                <div className={`h-2 rounded-full ${m.color} transition-all duration-500`}
-                  style={{ width: `${m.available ? m.value : 0}%` }} />
+                <div
+                  className={`h-2 rounded-full ${m.color} transition-all duration-500`}
+                  style={{ width: `${m.available ? m.value : 0}%` }}
+                />
               </div>
             </div>
           ))}

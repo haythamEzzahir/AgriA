@@ -2,8 +2,14 @@ import React from 'react';
 import { useLanguage } from '../../i18n/context';
 
 const emojis = {
-  Tomatoes: '🍅', Peppers: '🫑', Corn: '🌽', Sunflowers: '🌻',
-  Olives: '🫒', Argan: '🌿', Potatoes: '🥔', Carrots: '🥕',
+  Tomatoes: 'Tom',
+  Peppers: 'Pep',
+  Corn: 'Corn',
+  Sunflowers: 'Sun',
+  Olives: 'Olv',
+  Argan: 'Arg',
+  Potatoes: 'Pot',
+  Carrots: 'Car',
 };
 
 export default function CropRecommendations({ crops }) {
@@ -17,8 +23,8 @@ export default function CropRecommendations({ crops }) {
       ) : (
         <div className="space-y-2">
           {crops.map((crop, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-farm-50">
-              <span className="text-xl">{emojis[crop.name] || '🌱'}</span>
+            <div key={`${crop.name}-${i}`} className="flex items-center gap-3 p-3 rounded-lg bg-farm-50">
+              <span className="text-xs font-bold text-farm-700 w-9">{emojis[crop.name] || 'Crop'}</span>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm">{crop.name}</span>
