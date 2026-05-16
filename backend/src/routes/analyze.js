@@ -32,6 +32,19 @@ router.post('/:farmId', async (req, res) => {
     ? farm.polygon
     : { type: 'Feature', properties: {}, geometry: farm.polygon };
 
+  // Derive coords from polygon centroid if farm has none stored
+  let lat = farm.latitude;
+  let lng = farm.longitude;
+  if (lat == null || lng == null) {
+    const ring = polygonGeojson.geometry?.coordinates?.[0];
+    if (ring?.length) {
+      const lats = ring.map((p) => p[1]);
+      const lngs = ring.map((p) => p[0]);
+      lat = lats.reduce((a, b) => a + b, 0) / lats.length;
+      lng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+    }
+  }
+
   try {
     const result = await runPipeline({
       farm: {
@@ -39,9 +52,9 @@ router.post('/:farmId', async (req, res) => {
         name: farm.name,
         crop: (farm.crops || [])[0] || 'unknown',
         polygon_geojson: polygonGeojson,
-        center: [farm.longitude, farm.latitude],
-        lat: farm.latitude,
-        lon: farm.longitude,
+        center: [lng, lat],
+        lat,
+        lon: lng,
       },
       language: language || 'mixed',
     });

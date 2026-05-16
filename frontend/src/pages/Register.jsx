@@ -4,44 +4,48 @@ import { useLanguage } from '../i18n/context';
 import { useAuth } from '../services/AuthContext';
 import { register, farms } from '../services/api';
 import FarmDrawer from '../components/Map/FarmDrawer';
+import {
+  Leaf, ChevronLeft, Check, User, Sprout, MapPin, Phone, Target, Ruler,
+  Droplet, Wheat, AlertTriangle, Plus,
+} from '../components/icons';
 
 const FARM_SIZES = [
-  { id: 'small', icon: '🌱', labelEn: 'Small (< 1ha)', labelAr: 'صغيرة (أقل من 1 هكتار)', labelFr: 'Petite (< 1ha)' },
-  { id: 'medium', icon: '🌿', labelEn: 'Medium (1-5ha)', labelAr: 'متوسطة (1-5 هكتار)', labelFr: 'Moyenne (1-5ha)' },
-  { id: 'large', icon: '🌳', labelEn: 'Large (> 5ha)', labelAr: 'كبيرة (أكثر من 5 هكتار)', labelFr: 'Grande (> 5ha)' },
+  { id: 'small',  labelEn: 'Small',  labelAr: 'صغيرة',  labelFr: 'Petite',  hint: '< 1 ha' },
+  { id: 'medium', labelEn: 'Medium', labelAr: 'متوسطة', labelFr: 'Moyenne', hint: '1 – 5 ha' },
+  { id: 'large',  labelEn: 'Large',  labelAr: 'كبيرة',  labelFr: 'Grande',  hint: '> 5 ha' },
 ];
 
 const CROPS = [
-  { id: 'wheat', icon: '🌾', nameEn: 'Wheat', nameAr: 'قمح', nameFr: 'Blé' },
-  { id: 'olives', icon: '🫒', nameEn: 'Olives', nameAr: 'زيتون', nameFr: 'Olives' },
-  { id: 'tomatoes', icon: '🍅', nameEn: 'Tomatoes', nameAr: 'طماطم', nameFr: 'Tomates' },
-  { id: 'potatoes', icon: '🥔', nameEn: 'Potatoes', nameAr: 'بطاطس', nameFr: 'Pommes' },
-  { id: 'corn', icon: '🌽', nameEn: 'Corn', nameAr: 'ذرة', nameFr: 'Maïs' },
-  { id: 'peppers', icon: '🫑', nameEn: 'Peppers', nameAr: 'فلفل', nameFr: 'Poivrons' },
-  { id: 'carrots', icon: '🥕', nameEn: 'Carrots', nameAr: 'جزر', nameFr: 'Carottes' },
-  { id: 'grapes', icon: '🍇', nameEn: 'Grapes', nameAr: 'عنب', nameFr: 'Raisins' },
+  { id: 'wheat',    nameEn: 'Wheat',    nameAr: 'قمح',     nameFr: 'Blé' },
+  { id: 'olives',   nameEn: 'Olives',   nameAr: 'زيتون',   nameFr: 'Olives' },
+  { id: 'tomatoes', nameEn: 'Tomatoes', nameAr: 'طماطم',   nameFr: 'Tomates' },
+  { id: 'potatoes', nameEn: 'Potatoes', nameAr: 'بطاطس',   nameFr: 'Pommes' },
+  { id: 'corn',     nameEn: 'Corn',     nameAr: 'ذرة',     nameFr: 'Maïs' },
+  { id: 'peppers',  nameEn: 'Peppers',  nameAr: 'فلفل',    nameFr: 'Poivrons' },
+  { id: 'carrots',  nameEn: 'Carrots',  nameAr: 'جزر',     nameFr: 'Carottes' },
+  { id: 'grapes',   nameEn: 'Grapes',   nameAr: 'عنب',     nameFr: 'Raisins' },
 ];
 
 const IRRIGATION = [
-  { id: 'rain', icon: '☔', labelEn: 'Rain only', labelAr: 'مطر فقط', labelFr: 'Pluie' },
-  { id: 'drip', icon: '💧', labelEn: 'Drip irrigation', labelAr: 'ري بالتنقيط', labelFr: 'Goutte-à-goutte' },
-  { id: 'well', icon: '🪣', labelEn: 'Well water', labelAr: 'مياه الآبار', labelFr: 'Puits' },
-  { id: 'manual', icon: '🚿', labelEn: 'Manual', labelAr: 'يدوي', labelFr: 'Manuel' },
+  { id: 'rain',   labelEn: 'Rain only',       labelAr: 'مطر فقط',     labelFr: 'Pluie' },
+  { id: 'drip',   labelEn: 'Drip irrigation', labelAr: 'ري بالتنقيط', labelFr: 'Goutte-à-goutte' },
+  { id: 'well',   labelEn: 'Well water',      labelAr: 'مياه الآبار', labelFr: 'Puits' },
+  { id: 'manual', labelEn: 'Manual',          labelAr: 'يدوي',        labelFr: 'Manuel' },
 ];
 
 const WATER_ACCESS = [
-  { id: 'good', icon: '✓', labelEn: 'Good access', labelAr: 'متوفر جيداً', labelFr: 'Bon accès' },
-  { id: 'moderate', icon: '~', labelEn: 'Moderate', labelAr: 'متوسط', labelFr: 'Modéré' },
-  { id: 'difficult', icon: '!', labelEn: 'Difficult', labelAr: 'صعب', labelFr: 'Difficile' },
+  { id: 'good',      labelEn: 'Good access', labelAr: 'متوفر جيداً', labelFr: 'Bon accès', dot: 'bg-emerald-500' },
+  { id: 'moderate',  labelEn: 'Moderate',    labelAr: 'متوسط',      labelFr: 'Modéré',    dot: 'bg-amber-400' },
+  { id: 'difficult', labelEn: 'Difficult',   labelAr: 'صعب',        labelFr: 'Difficile', dot: 'bg-rose-500' },
 ];
 
 const GOALS = [
-  { id: 'harvest', icon: '📈', labelEn: 'Improve harvest', labelAr: 'تحسين المحصول', labelFr: 'Améliorer' },
-  { id: 'water', icon: '💧', labelEn: 'Save water', labelAr: 'توفير الماء', labelFr: 'Économiser' },
-  { id: 'detect', icon: '🔍', labelEn: 'Detect problems', labelAr: 'كشف المشاكل', labelFr: 'Détecter' },
-  { id: 'weather', icon: '🌤️', labelEn: 'Weather alerts', labelAr: 'الطقس', labelFr: 'Météo' },
-  { id: 'sell', icon: '💰', labelEn: 'Sell products', labelAr: 'بيع', labelFr: 'Vendre' },
-  { id: 'buy', icon: '🛒', labelEn: 'Buy supplies', labelAr: 'شراء', labelFr: 'Acheter' },
+  { id: 'harvest', labelEn: 'Improve harvest',  labelAr: 'تحسين المحصول', labelFr: 'Améliorer la récolte' },
+  { id: 'water',   labelEn: 'Save water',       labelAr: 'توفير الماء',   labelFr: 'Économiser l\'eau' },
+  { id: 'detect',  labelEn: 'Detect problems',  labelAr: 'كشف المشاكل',   labelFr: 'Détecter les problèmes' },
+  { id: 'weather', labelEn: 'Weather alerts',   labelAr: 'تنبيهات الطقس', labelFr: 'Alertes météo' },
+  { id: 'sell',    labelEn: 'Sell products',    labelAr: 'بيع المنتجات',  labelFr: 'Vendre' },
+  { id: 'buy',     labelEn: 'Buy supplies',     labelAr: 'شراء',          labelFr: 'Acheter' },
 ];
 
 const REGIONS = [
@@ -50,14 +54,51 @@ const REGIONS = [
   'Drâa-Tafilalet', 'Laâyoune-Sakia El Hamra', 'Dakhla-Oued Ed-Dahab',
 ];
 
-function ToggleChip({ selected, onClick, children }) {
+const STEPS = [
+  { id: 0, label: 'Farmer', Icon: User },
+  { id: 1, label: 'Farm',   Icon: Sprout },
+  { id: 2, label: 'Land',   Icon: MapPin },
+];
+
+function Section({ icon: Icon, title, children }) {
   return (
-    <button onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+    <div className="bg-white border border-farm-100 rounded-2xl shadow-sm p-5">
+      <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-farm-500 font-semibold mb-3">
+        {Icon && <Icon size={13} className="text-agri-500" />}
+        {title}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function Chip({ selected, onClick, children, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
         selected
-          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-          : 'bg-white/5 border-gray-700 text-gray-400 hover:border-gray-500'
-      }`}>
+          ? 'bg-agri-500 text-white border-agri-500 shadow-md'
+          : 'bg-white text-farm-500 border-farm-200 hover:border-agri-300'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function GridButton({ selected, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`p-4 rounded-xl border text-center transition ${
+        selected
+          ? 'bg-agri-50 border-agri-500 ring-1 ring-agri-500'
+          : 'bg-white border-farm-200 hover:border-agri-300'
+      }`}
+    >
       {children}
     </button>
   );
@@ -65,7 +106,7 @@ function ToggleChip({ selected, onClick, children }) {
 
 export default function Register() {
   const navigate = useNavigate();
-  const { lang, setLang, languages, t } = useLanguage();
+  const { lang, setLang, languages } = useLanguage();
   const { isAuthenticated } = useAuth();
 
   const [section, setSection] = useState(0);
@@ -95,17 +136,9 @@ export default function Register() {
   const handlePersonalSubmit = async () => {
     setSavingPersonal(true);
     setError('');
-
-    if (!isAuthenticated) {
-      setError('Please sign in before saving your profile.');
-      setSavingPersonal(false);
-      return;
-    }
-
+    if (!isAuthenticated) { setError('Please sign in before saving your profile.'); setSavingPersonal(false); return; }
     try {
-      await register.create({
-        name: form.name, phone: form.phone, region: form.region, goals: form.goals,
-      });
+      await register.create({ name: form.name, phone: form.phone, region: form.region, goals: form.goals });
       setSection(1);
     } catch (err) {
       setError(err.message);
@@ -117,19 +150,12 @@ export default function Register() {
   const handleFarmSubmit = async () => {
     setSubmitting(true);
     setError('');
-
-    if (!isAuthenticated) {
-      setError('Please sign in before saving your profile.');
-      setSubmitting(false);
-      return;
-    }
-
+    if (!isAuthenticated) { setError('Please sign in before saving your profile.'); setSubmitting(false); return; }
     if (!form.size || !form.irrigation || !form.waterAccess) {
-      setError('Please fill in all required fields: Farm Size, Irrigation Method, and Water Access.');
+      setError('Please fill in Farm size, Irrigation method and Water access.');
       setSubmitting(false);
       return;
     }
-
     try {
       const res = await register.create({
         name: form.name, size: form.size, customArea: form.customArea,
@@ -147,25 +173,9 @@ export default function Register() {
   const handleLandSubmit = async () => {
     setSavingLand(true);
     setError('');
-
-    if (!isAuthenticated) {
-      setError('Please sign in before saving your profile.');
-      setSavingLand(false);
-      return;
-    }
-
-    if (!farmId) {
-      setError('Farm profile not found. Please go back and complete the farm information first.');
-      setSavingLand(false);
-      return;
-    }
-
-    if (!polygon) {
-      setError('Please draw your farm boundary on the map.');
-      setSavingLand(false);
-      return;
-    }
-
+    if (!isAuthenticated) { setError('Please sign in before saving your profile.'); setSavingLand(false); return; }
+    if (!farmId) { setError('Farm profile not found. Go back and complete the farm step.'); setSavingLand(false); return; }
+    if (!polygon) { setError('Please draw your farm boundary on the map.'); setSavingLand(false); return; }
     try {
       await farms.update(farmId, { polygon });
       navigate('/dashboard', { replace: true });
@@ -185,224 +195,246 @@ export default function Register() {
   const isFarmerComplete = form.name?.trim() && form.phone?.length >= 10 && form.region;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-emerald-950 to-gray-900 text-white">
-      <div className="border-b border-white/5">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-farm-50">
+      {/* Top bar */}
+      <nav className="bg-agri-900 border-b border-agri-800 sticky top-0 z-[1000]">
+        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => section === 2 ? setSection(1) : section === 1 ? setSection(0) : navigate('/')}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition">
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+            <button
+              onClick={() => (section === 2 ? setSection(1) : section === 1 ? setSection(0) : navigate('/'))}
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/70 hover:text-white transition"
+              aria-label="Back"
+            >
+              <ChevronLeft size={16} />
             </button>
-            <span className="font-semibold text-sm">🌾 AgriCopilot</span>
+            <div className="flex items-center gap-2">
+              <Leaf size={18} className="text-agri-400" />
+              <span className="font-bold text-white text-base tracking-tight">AgriCopilot</span>
+            </div>
           </div>
-
-          <div className="flex gap-1 bg-white/5 rounded-lg p-0.5">
-            {languages.map((l) => (
-              <button key={l.code} onClick={() => setLang(l.code)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition ${
-                  lang === l.code ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}>
-                {l.code === 'ar' ? 'ع' : l.code.toUpperCase()}
+          <div className="flex gap-1 bg-agri-950 rounded-lg p-0.5">
+            {languages.map((language) => (
+              <button
+                key={language.code}
+                onClick={() => setLang(language.code)}
+                className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition ${
+                  lang === language.code ? 'bg-agri-700 text-agri-200' : 'text-white/55 hover:text-white'
+                }`}
+              >
+                {language.code === 'ar' ? 'ع' : language.code.toUpperCase()}
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </nav>
 
-      <div className="max-w-4xl mx-auto px-4 pt-8 pb-4">
-        <div className="flex gap-2 bg-white/5 rounded-xl p-1">
-          <button onClick={() => setSection(0)}
-            className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${
-              section === 0 ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
-            }`}>
-            👤 Farmer
-          </button>
-          <button onClick={() => setSection(isFarmerComplete ? 1 : 0)}
-            className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${
-              section === 1 ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
-            }`}>
-            🌾 Farm
-          </button>
-          <button onClick={() => setSection(farmId ? 2 : section)}
-            className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${
-              section === 2 ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
-            }`}>
-            📍 Land
-          </button>
+      {/* Step indicator */}
+      <div className="max-w-4xl mx-auto px-6 pt-8 pb-4">
+        <div className="flex gap-2 bg-white rounded-2xl p-1.5 border border-farm-100 shadow-sm">
+          {STEPS.map((step) => {
+            const Icon = step.Icon;
+            const isActive = section === step.id;
+            const canNav = step.id === 0 || (step.id === 1 && isFarmerComplete) || (step.id === 2 && farmId);
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => canNav && setSection(step.id)}
+                disabled={!canNav}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-agri-500 text-white shadow-md'
+                    : canNav
+                      ? 'text-farm-500 hover:text-agri-600'
+                      : 'text-farm-300 cursor-not-allowed'
+                }`}
+              >
+                <Icon size={14} />
+                {step.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {!isAuthenticated && (
-        <div className="max-w-4xl mx-auto px-4 mb-4">
-          <div className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-200 flex items-center justify-between">
-            <span>You need an account to save your farm profile.</span>
-            <a href="/auth" className="px-4 py-1.5 bg-amber-500 text-black rounded-lg font-medium text-xs hover:bg-amber-400 transition">
-              Sign In
+        <div className="max-w-4xl mx-auto px-6 mb-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-2">
+              <AlertTriangle size={14} />
+              You need an account to save your farm profile.
+            </span>
+            <a href="/auth" className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold text-xs transition">
+              Sign in
             </a>
           </div>
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 pb-24">
+      <div className="max-w-4xl mx-auto px-6 pb-12">
         {error && (
-          <div className="mb-4 bg-red-500/20 border border-red-500/30 rounded-xl p-3 text-sm text-red-200">
-            {error}
+          <div className="mb-4 bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm text-rose-700 inline-flex items-start gap-2">
+            <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        {section === 0 ? (
-          <div className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">👤 Full Name</label>
-              <input value={form.name} onChange={(e) => update('name', e.target.value)}
+        {section === 0 && (
+          <div className="space-y-4">
+            <Section icon={User} title="Full name">
+              <input
+                value={form.name}
+                onChange={(e) => update('name', e.target.value)}
                 placeholder="Enter your full name"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition text-lg" />
-            </div>
+                className="w-full bg-white border border-farm-200 rounded-xl px-4 py-3 text-agri-900 placeholder:text-farm-300 focus:outline-none focus:ring-2 focus:ring-agri-400 focus:border-transparent transition text-base"
+              />
+            </Section>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">📞 Phone Number</label>
-                <input value={form.phone} onChange={(e) => update('phone', e.target.value.replace(/\D/g, '').slice(0, 15))}
+            <div className="grid md:grid-cols-2 gap-4">
+              <Section icon={Phone} title="Phone number">
+                <input
+                  value={form.phone}
+                  onChange={(e) => update('phone', e.target.value.replace(/\D/g, '').slice(0, 15))}
                   placeholder="+212 6XX XXX XXX"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition text-lg font-mono" />
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">📍 Region</label>
-                <select value={form.region} onChange={(e) => update('region', e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 focus:outline-none transition appearance-none">
-                  <option value="" className="bg-gray-800">Select region...</option>
-                  {REGIONS.map((r) => (
-                    <option key={r} value={r} className="bg-gray-800">{r}</option>
-                  ))}
+                  className="w-full bg-white border border-farm-200 rounded-xl px-4 py-3 text-agri-900 placeholder:text-farm-300 focus:outline-none focus:ring-2 focus:ring-agri-400 focus:border-transparent transition text-base font-mono"
+                />
+              </Section>
+              <Section icon={MapPin} title="Region">
+                <select
+                  value={form.region}
+                  onChange={(e) => update('region', e.target.value)}
+                  className="w-full bg-white border border-farm-200 rounded-xl px-4 py-3 text-agri-900 focus:outline-none focus:ring-2 focus:ring-agri-400 focus:border-transparent transition appearance-none"
+                >
+                  <option value="">Select region…</option>
+                  {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
-              </div>
+              </Section>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">🎯 Goals (choose what matters)</label>
+            <Section icon={Target} title="Goals (choose what matters)">
               <div className="flex flex-wrap gap-2">
                 {GOALS.map((g) => (
-                  <ToggleChip key={g.id} selected={form.goals.includes(g.id)} onClick={() => toggleArray('goals', g.id)}>
-                    {g.icon} {l(g)}
-                  </ToggleChip>
+                  <Chip key={g.id} selected={form.goals.includes(g.id)} onClick={() => toggleArray('goals', g.id)}>
+                    {l(g)}
+                  </Chip>
                 ))}
               </div>
-            </div>
+            </Section>
 
-            <div className="text-center">
-              <button onClick={handlePersonalSubmit}
+            <div className="text-center pt-2">
+              <button
+                onClick={handlePersonalSubmit}
                 disabled={!isFarmerComplete || savingPersonal}
-                className="px-10 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
-                {savingPersonal ? '⏳ Saving...' : 'Next → Farm Information'}
+                className="px-10 py-3 bg-agri-500 hover:bg-agri-400 disabled:bg-farm-200 disabled:text-farm-400 text-white rounded-xl font-semibold transition shadow-md"
+              >
+                {savingPersonal ? 'Saving…' : 'Next — Farm information'}
               </button>
             </div>
           </div>
-        ) : section === 1 ? (
-          <div className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">📏 Farm Size</label>
+        )}
+
+        {section === 1 && (
+          <div className="space-y-4">
+            <Section icon={Ruler} title="Farm size">
               <div className="grid grid-cols-3 gap-3">
                 {FARM_SIZES.map((s) => (
-                  <button key={s.id} onClick={() => update('size', s.id)}
-                    className={`p-4 rounded-xl border text-center transition ${
-                      form.size === s.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/10 hover:border-gray-500'
-                    }`}>
-                    <span className="text-2xl block mb-1">{s.icon}</span>
-                    <span className="text-xs text-gray-400">{l(s)}</span>
-                  </button>
+                  <GridButton key={s.id} selected={form.size === s.id} onClick={() => update('size', s.id)}>
+                    <span className="block text-sm font-semibold text-agri-900">{l(s)}</span>
+                    <span className="block text-[11px] text-farm-400 mt-0.5">{s.hint}</span>
+                  </GridButton>
                 ))}
               </div>
-              <input value={form.customArea} onChange={(e) => update('customArea', e.target.value)}
-                placeholder="or enter area in hectares"
-                className="mt-3 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition text-sm" />
-            </div>
+              <input
+                value={form.customArea}
+                onChange={(e) => update('customArea', e.target.value)}
+                placeholder="Or enter area in hectares"
+                className="mt-3 w-full bg-white border border-farm-200 rounded-xl px-4 py-2.5 text-agri-900 placeholder:text-farm-300 focus:outline-none focus:ring-2 focus:ring-agri-400 focus:border-transparent transition text-sm"
+              />
+            </Section>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">🌱 Crops (select all that apply)</label>
-              <div className="grid grid-cols-4 gap-2">
+            <Section icon={Wheat} title="Crops (select all that apply)">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {CROPS.map((c) => (
-                  <button key={c.id} onClick={() => toggleArray('crops', c.id)}
-                    className={`p-3 rounded-xl border text-center transition ${
-                      form.crops.includes(c.id) ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/10 hover:border-gray-500'
-                    }`}>
-                    <span className="text-xl block mb-1">{c.icon}</span>
-                    <span className="text-xs text-gray-400">{l(c)}</span>
-                  </button>
+                  <Chip key={c.id} selected={form.crops.includes(c.id)} onClick={() => toggleArray('crops', c.id)} className="justify-center">
+                    {l(c)}
+                  </Chip>
                 ))}
               </div>
-            </div>
+            </Section>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">💧 Irrigation Method</label>
+            <div className="grid md:grid-cols-2 gap-4">
+              <Section icon={Droplet} title="Irrigation method">
                 <div className="grid grid-cols-2 gap-2">
                   {IRRIGATION.map((ir) => (
-                    <button key={ir.id} onClick={() => update('irrigation', ir.id)}
-                      className={`p-3 rounded-xl border text-center transition ${
-                        form.irrigation === ir.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/10 hover:border-gray-500'
-                      }`}>
-                      <span className="text-lg block mb-1">{ir.icon}</span>
-                      <span className="text-xs text-gray-400">{l(ir)}</span>
-                    </button>
+                    <GridButton key={ir.id} selected={form.irrigation === ir.id} onClick={() => update('irrigation', ir.id)}>
+                      <span className="block text-sm font-semibold text-agri-900">{l(ir)}</span>
+                    </GridButton>
                   ))}
                 </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">🚰 Water Access</label>
+              </Section>
+              <Section icon={Droplet} title="Water access">
                 <div className="space-y-2">
                   {WATER_ACCESS.map((w) => (
-                    <button key={w.id} onClick={() => update('waterAccess', w.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition ${
-                        form.waterAccess === w.id ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/10 hover:border-gray-500'
-                      }`}>
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                        w.id === 'good' ? 'bg-emerald-500/20 text-emerald-400' :
-                        w.id === 'moderate' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>{w.icon}</span>
-                      <span className="text-sm text-gray-300">{l(w)}</span>
+                    <button
+                      key={w.id}
+                      type="button"
+                      onClick={() => update('waterAccess', w.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition ${
+                        form.waterAccess === w.id
+                          ? 'bg-agri-50 border-agri-500 ring-1 ring-agri-500'
+                          : 'bg-white border-farm-200 hover:border-agri-300'
+                      }`}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-full ${w.dot}`} />
+                      <span className="text-sm font-medium text-agri-800">{l(w)}</span>
                     </button>
                   ))}
                 </div>
-              </div>
+              </Section>
             </div>
 
-            <div className="text-center pt-4">
-              <button onClick={handleFarmSubmit} disabled={submitting}
-                className="px-12 py-3.5 bg-emerald-500 text-white rounded-xl font-semibold text-lg hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
-                {submitting ? '⏳ Creating...' : 'Next → Select Your Land'}
+            <div className="text-center pt-2">
+              <button
+                onClick={handleFarmSubmit}
+                disabled={submitting}
+                className="px-12 py-3 bg-agri-500 hover:bg-agri-400 disabled:bg-farm-200 disabled:text-farm-400 text-white rounded-xl font-semibold text-base transition shadow-md"
+              >
+                {submitting ? 'Creating…' : 'Next — Select your land'}
               </button>
             </div>
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">
-                📍 Draw Your Farm Boundary
-              </label>
-              <p className="text-sm text-gray-400 mb-4">
+        )}
+
+        {section === 2 && (
+          <div className="space-y-4">
+            <Section icon={MapPin} title="Draw your farm boundary">
+              <p className="text-sm text-farm-500 mb-3">
                 Click on the map to place points around your farm. The area will be calculated automatically.
               </p>
               <FarmDrawer onPolygonChange={setPolygon} />
               {polygon && (
-                <p className="text-sm text-emerald-400 mt-3">
-                  ✓ Farm boundary set — ready to save
+                <p className="inline-flex items-center gap-1.5 text-sm text-agri-600 mt-3 font-medium">
+                  <Check size={14} />
+                  Farm boundary set — ready to save
                 </p>
               )}
-            </div>
+            </Section>
 
-            <div className="text-center pt-4 flex justify-center gap-3">
-              <button onClick={() => setSection(1)}
-                className="px-8 py-3.5 bg-white/5 border border-white/10 text-gray-300 rounded-xl font-semibold text-lg hover:bg-white/10 transition">
-                ← Back
+            <div className="text-center pt-2 flex justify-center gap-3">
+              <button
+                onClick={() => setSection(1)}
+                className="inline-flex items-center gap-1.5 px-6 py-3 bg-white border border-farm-200 text-farm-600 hover:bg-farm-50 rounded-xl font-semibold text-base transition"
+              >
+                <ChevronLeft size={14} />
+                Back
               </button>
-              <button onClick={handleLandSubmit} disabled={savingLand}
-                className="px-12 py-3.5 bg-emerald-500 text-white rounded-xl font-semibold text-lg hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
-                {savingLand ? '⏳ Saving...' : '✓ Save & Finish'}
+              <button
+                onClick={handleLandSubmit}
+                disabled={savingLand}
+                className="inline-flex items-center gap-1.5 px-10 py-3 bg-agri-500 hover:bg-agri-400 disabled:bg-farm-200 disabled:text-farm-400 text-white rounded-xl font-semibold text-base transition shadow-md"
+              >
+                <Check size={14} />
+                {savingLand ? 'Saving…' : 'Save & finish'}
               </button>
             </div>
           </div>

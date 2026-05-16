@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, ImageOverlay, Polygon, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
+import { Satellite } from '../icons';
 
 const INDEX_STOPS = {
   ndvi: [
@@ -126,7 +127,7 @@ function IndexLegend({ mode }) {
               className="w-2.5 h-2.5 rounded-sm inline-block"
               style={{ background: `rgb(${c[0]},${c[1]},${c[2]})` }}
             />
-            <span className="text-[9px] text-agri-500">{s.label}</span>
+            <span className="text-[9px] text-farm-500">{s.label}</span>
           </div>
         );
       })}
@@ -136,15 +137,15 @@ function IndexLegend({ mode }) {
 
 function IndexToggle({ mode, onChange }) {
   return (
-    <div className="flex bg-agri-900 rounded overflow-hidden border border-agri-700">
+    <div className="flex bg-white rounded-lg overflow-hidden border border-farm-100 shadow-sm">
       {['ndvi', 'ndwi'].map((m) => (
         <button
           key={m}
           onClick={() => onChange(m)}
-          className={`px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide transition ${
+          className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
             mode === m
-              ? 'bg-agri-600 text-agri-100'
-              : 'text-agri-500 hover:text-agri-300'
+              ? 'bg-agri-500 text-white'
+              : 'text-farm-500 hover:text-agri-600'
           }`}
         >
           {m}
@@ -218,7 +219,7 @@ export default function FarmSatelliteMap({ heatmapUrls, pixels, farmPolygon, far
           />
         </MapContainer>
       </div>
-      <div className="flex items-center justify-between px-3 py-1.5 bg-agri-900/90 border-t border-agri-700 text-[10px]">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white border-t border-farm-100 text-[10px]">
         <div className="flex items-center gap-3">
           <IndexLegend mode={indexMode} />
         </div>
@@ -230,12 +231,15 @@ export default function FarmSatelliteMap({ heatmapUrls, pixels, farmPolygon, far
               onChange={(e) => setShowPixels(e.target.checked)}
               className="accent-agri-500 w-2.5 h-2.5"
             />
-            <span className="text-agri-500">10m pixels</span>
+            <span className="text-farm-500">10m pixels</span>
           </label>
           {satelliteDate && (
-            <span className="text-agri-600">🛰️ {new Date(satelliteDate).toLocaleDateString()}</span>
+            <span className="inline-flex items-center gap-1 text-farm-500">
+              <Satellite size={10} className="text-agri-500" />
+              {new Date(satelliteDate).toLocaleDateString()}
+            </span>
           )}
-          <span className="text-agri-600">{pixels?.length || 0} pixels</span>
+          <span className="text-farm-400">{pixels?.length || 0} pixels</span>
         </div>
       </div>
     </div>

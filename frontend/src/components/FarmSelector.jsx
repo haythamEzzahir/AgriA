@@ -1,8 +1,28 @@
 import React, { useState } from 'react';
 import FarmDrawer from './Map/FarmDrawer';
 import { farms as farmsApi } from '../services/api';
+import { ChevronDown, Plus } from './icons';
 
-export default function FarmSelector({ farms, selectedId, onSelect, onAdd }) {
+const THEMES = {
+  light: {
+    trigger: 'text-agri-900 hover:text-agri-700',
+    chevron: 'text-farm-400',
+    menu: 'bg-white border border-farm-100 shadow-xl',
+    item: 'text-agri-700 hover:bg-farm-50',
+    activeItem: 'bg-agri-50 text-agri-700 font-semibold',
+    addItem: 'text-agri-600 hover:bg-agri-50 border-t border-farm-100',
+  },
+  dark: {
+    trigger: 'text-white hover:text-agri-200',
+    chevron: 'text-white/60',
+    menu: 'bg-slate-950/95 border border-white/15 shadow-xl backdrop-blur',
+    item: 'text-white/80 hover:bg-white/5',
+    activeItem: 'bg-white/10 text-white font-semibold',
+    addItem: 'text-emerald-300 hover:bg-white/5 border-t border-white/10',
+  },
+};
+
+export default function FarmSelector({ farms, selectedId, onSelect, onAdd, theme = 'light' }) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -10,6 +30,7 @@ export default function FarmSelector({ farms, selectedId, onSelect, onAdd }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const t = THEMES[theme] || THEMES.light;
   const current = farms.find((f) => f.id === selectedId) || farms[0];
 
   const resetForm = () => {
@@ -52,23 +73,21 @@ export default function FarmSelector({ farms, selectedId, onSelect, onAdd }) {
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm font-bold text-agri-50 hover:text-agri-200 transition"
+          className={`flex items-center gap-1.5 text-base font-bold transition ${t.trigger}`}
         >
           <span>{current?.name || 'Select farm'}</span>
-          <span className="text-[9px] text-agri-500">▼</span>
+          <ChevronDown size={14} className={t.chevron} />
         </button>
         {open && (
           <>
             <div className="fixed inset-0 z-[40]" onClick={() => setOpen(false)} />
-            <div className="absolute top-full left-0 mt-1 min-w-56 bg-agri-800 border border-agri-700 rounded-lg shadow-xl z-[50] overflow-hidden">
+            <div className={`absolute top-full left-0 mt-1.5 min-w-56 rounded-xl overflow-hidden z-[50] ${t.menu}`}>
               {farms.length > 0 && farms.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => { onSelect(f.id); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-xs transition ${
-                    f.id === (selectedId || current?.id)
-                      ? 'bg-agri-700 text-agri-100 font-medium'
-                      : 'text-agri-300 hover:bg-agri-700'
+                  className={`w-full text-left px-3.5 py-2 text-xs transition ${
+                    f.id === (selectedId || current?.id) ? t.activeItem : t.item
                   }`}
                 >
                   {f.name}
@@ -76,9 +95,10 @@ export default function FarmSelector({ farms, selectedId, onSelect, onAdd }) {
               ))}
               <button
                 onClick={() => { setAdding(true); setOpen(false); }}
-                className="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-agri-700 border-t border-agri-700"
+                className={`w-full flex items-center gap-1.5 text-left px-3.5 py-2 text-xs font-semibold transition ${t.addItem}`}
               >
-                + Add new farm
+                <Plus size={12} />
+                Add new farm
               </button>
             </div>
           </>
@@ -86,34 +106,34 @@ export default function FarmSelector({ farms, selectedId, onSelect, onAdd }) {
       </div>
 
       {adding && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-3xl bg-agri-900 rounded-xl border border-agri-700 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-agri-50 mb-1">Add new farm</h2>
-            <p className="text-agri-500 text-xs mb-4">Name your farm and draw the boundary on the map.</p>
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl bg-white rounded-2xl border border-farm-100 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold text-agri-900 mb-1">Add new farm</h2>
+            <p className="text-farm-400 text-xs mb-4">Name your farm and draw the boundary on the map.</p>
 
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Farm name"
-              className="w-full px-3 py-2 mb-4 rounded bg-agri-800 border border-agri-700 text-agri-100 text-sm focus:border-agri-500 outline-none"
+              className="w-full px-3 py-2 mb-4 rounded-xl bg-white border border-farm-200 text-agri-800 text-sm focus:outline-none focus:ring-2 focus:ring-agri-400 focus:border-transparent"
             />
 
             <FarmDrawer onPolygonChange={setPolygon} />
 
-            {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+            {error && <p className="text-rose-500 text-xs mt-3">{error}</p>}
 
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => { setAdding(false); resetForm(); }}
                 disabled={saving}
-                className="px-4 py-2 text-sm text-agri-400 hover:text-agri-200 transition"
+                className="px-4 py-2 text-sm text-farm-500 hover:text-agri-700 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving || !name.trim() || !polygon}
-                className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 disabled:bg-agri-700 disabled:text-agri-500 text-white rounded transition"
+                className="px-4 py-2 text-sm bg-agri-500 hover:bg-agri-400 disabled:bg-farm-200 disabled:text-farm-400 text-white font-semibold rounded-xl transition shadow-sm"
               >
                 {saving ? 'Saving…' : 'Save farm'}
               </button>
