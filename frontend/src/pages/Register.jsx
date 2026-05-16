@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/context';
 import { useAuth } from '../services/AuthContext';
-import { register } from '../services/api';
+import { register, farms } from '../services/api';
+import FarmDrawer from '../components/Map/FarmDrawer';
 
 const FARM_SIZES = [
   { id: 'small', icon: '🌱', labelEn: 'Small (< 1ha)', labelAr: 'صغيرة (أقل من 1 هكتار)', labelFr: 'Petite (< 1ha)' },
@@ -73,8 +74,11 @@ export default function Register() {
     size: '', crops: [], irrigation: '',
     waterAccess: '', customArea: '',
   });
+  const [farmId, setFarmId] = useState(null);
+  const [polygon, setPolygon] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingLand, setSavingLand] = useState(false);
   const [error, setError] = useState('');
 
   const update = useCallback((key, value) => {
@@ -92,6 +96,12 @@ export default function Register() {
     setSavingPersonal(true);
     setError('');
 
+    if (!isAuthenticated) {
+      setError('Please sign in before saving your profile.');
+      setSavingPersonal(false);
+      return;
+    }
+
     try {
       await register.create({
         name: form.name, phone: form.phone, region: form.region, goals: form.goals,
@@ -108,12 +118,25 @@ export default function Register() {
     setSubmitting(true);
     setError('');
 
+    if (!isAuthenticated) {
+      setError('Please sign in before saving your profile.');
+      setSubmitting(false);
+      return;
+    }
+
+    if (!form.size || !form.irrigation || !form.waterAccess) {
+      setError('Please fill in all required fields: Farm Size, Irrigation Method, and Water Access.');
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      await register.create({
+      const res = await register.create({
         name: form.name, size: form.size, customArea: form.customArea,
         crops: form.crops, irrigation: form.irrigation, waterAccess: form.waterAccess,
       });
-      navigate('/dashboard', { replace: true });
+      if (res.farmId) setFarmId(res.farmId);
+      setSection(2);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -121,9 +144,42 @@ export default function Register() {
     }
   };
 
+  const handleLandSubmit = async () => {
+    setSavingLand(true);
+    setError('');
+
+    if (!isAuthenticated) {
+      setError('Please sign in before saving your profile.');
+      setSavingLand(false);
+      return;
+    }
+
+    if (!farmId) {
+      setError('Farm profile not found. Please go back and complete the farm information first.');
+      setSavingLand(false);
+      return;
+    }
+
+    if (!polygon) {
+      setError('Please draw your farm boundary on the map.');
+      setSavingLand(false);
+      return;
+    }
+
+    try {
+      await farms.update(farmId, { polygon });
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingLand(false);
+    }
+  };
+
   const l = (o) => {
     if (typeof o === 'string') return o;
-    return o[`label${lang === 'ar' ? 'Ar' : lang === 'fr' ? 'Fr' : 'En'}`] || o.labelEn || o;
+    const key = lang === 'ar' ? 'Ar' : lang === 'fr' ? 'Fr' : 'En';
+    return o[`label${key}`] || o[`name${key}`] || o.labelEn || o.nameEn || o;
   };
 
   const isFarmerComplete = form.name?.trim() && form.phone?.length >= 10 && form.region;
@@ -133,7 +189,7 @@ export default function Register() {
       <div className="border-b border-white/5">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => section > 0 ? setSection(0) : navigate('/')}
+            <button onClick={() => section === 2 ? setSection(1) : section === 1 ? setSection(0) : navigate('/')}
               className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition">
               <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -161,21 +217,30 @@ export default function Register() {
             className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${
               section === 0 ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
             }`}>
-            👤 Farmer Information
+            👤 Farmer
           </button>
           <button onClick={() => setSection(isFarmerComplete ? 1 : 0)}
             className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${
               section === 1 ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
             }`}>
-            🌾 Farm Information
+            🌾 Farm
+          </button>
+          <button onClick={() => setSection(farmId ? 2 : section)}
+            className={`flex-1 py-3 rounded-lg text-sm font-medium transition ${
+              section === 2 ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+            }`}>
+            📍 Land
           </button>
         </div>
       </div>
 
       {!isAuthenticated && (
         <div className="max-w-4xl mx-auto px-4 mb-4">
-          <div className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-200">
-            Please <a href="/auth" className="underline font-medium">sign in</a> first to save your farm profile.
+          <div className="bg-amber-500/20 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-200 flex items-center justify-between">
+            <span>You need an account to save your farm profile.</span>
+            <a href="/auth" className="px-4 py-1.5 bg-amber-500 text-black rounded-lg font-medium text-xs hover:bg-amber-400 transition">
+              Sign In
+            </a>
           </div>
         </div>
       )}
@@ -235,7 +300,7 @@ export default function Register() {
               </button>
             </div>
           </div>
-        ) : (
+        ) : section === 1 ? (
           <div className="space-y-6">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">📏 Farm Size</label>
@@ -307,9 +372,37 @@ export default function Register() {
             </div>
 
             <div className="text-center pt-4">
-              <button onClick={handleFarmSubmit} disabled={submitting || !isAuthenticated || !form.size || !form.irrigation || !form.waterAccess}
+              <button onClick={handleFarmSubmit} disabled={submitting}
                 className="px-12 py-3.5 bg-emerald-500 text-white rounded-xl font-semibold text-lg hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
-                {submitting ? '⏳ Creating Profile...' : '✓ Create Farm Profile'}
+                {submitting ? '⏳ Creating...' : 'Next → Select Your Land'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <label className="text-xs uppercase tracking-wider text-gray-500 font-medium block mb-3">
+                📍 Draw Your Farm Boundary
+              </label>
+              <p className="text-sm text-gray-400 mb-4">
+                Click on the map to place points around your farm. The area will be calculated automatically.
+              </p>
+              <FarmDrawer onPolygonChange={setPolygon} />
+              {polygon && (
+                <p className="text-sm text-emerald-400 mt-3">
+                  ✓ Farm boundary set — ready to save
+                </p>
+              )}
+            </div>
+
+            <div className="text-center pt-4 flex justify-center gap-3">
+              <button onClick={() => setSection(1)}
+                className="px-8 py-3.5 bg-white/5 border border-white/10 text-gray-300 rounded-xl font-semibold text-lg hover:bg-white/10 transition">
+                ← Back
+              </button>
+              <button onClick={handleLandSubmit} disabled={savingLand}
+                className="px-12 py-3.5 bg-emerald-500 text-white rounded-xl font-semibold text-lg hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-lg shadow-emerald-500/20">
+                {savingLand ? '⏳ Saving...' : '✓ Save & Finish'}
               </button>
             </div>
           </div>

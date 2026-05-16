@@ -54,15 +54,22 @@ function RegisterForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [success, setSuccess] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
       const res = await auth.signup(form);
-      if (res.session) login(res.session);
-      navigate('/dashboard', { replace: true });
+      if (res.session) {
+        login(res.session);
+        navigate('/dashboard', { replace: true });
+      } else {
+        setSuccess('Account created! Check your email to confirm your address.');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,6 +80,7 @@ function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && <p className="text-red-600 text-sm">{error}</p>}
+      {success && <p className="text-emerald-600 text-sm bg-emerald-50 p-3 rounded-xl">{success}</p>}
       <input placeholder={t('auth.name')} value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
         className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-900 focus:outline-none bg-gray-50 text-sm" required />

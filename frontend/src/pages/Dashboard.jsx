@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [forecastTab, setForecastTab] = useState('daily');
   const [analysis, setAnalysis] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
   const [historyData, setHistoryData] = useState(null);
 
   useEffect(() => {
@@ -77,11 +78,13 @@ export default function Dashboard() {
   const runAnalysis = useCallback(async () => {
     if (!farm) return;
     setAnalysisLoading(true);
+    setAnalysisError('');
     try {
       const result = await analyze.run(farm.id);
       setAnalysis(result);
     } catch (err) {
       console.error('Analysis failed:', err);
+      setAnalysisError(err.message || 'Analysis failed');
     } finally {
       setAnalysisLoading(false);
     }
@@ -162,14 +165,28 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {analysisError && (
+        <div className="flex items-start justify-between gap-3 px-3 py-2 rounded bg-red-900/40 border border-red-700/60 text-red-200 text-xs">
+          <div className="flex-1">
+            <span className="font-medium">Analysis failed:</span> {analysisError}
+          </div>
+          <button
+            onClick={() => setAnalysisError('')}
+            className="text-red-300 hover:text-red-100 text-base leading-none"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Main content + Right panel */}
       <div className="flex flex-1 gap-4 min-h-0">
         {/* Map */}
         <div className="flex-1 rounded-lg bg-agri-800 border border-agri-700 overflow-hidden relative">
           {analysis ? (
             <FarmSatelliteMap
-              heatmapUrl={analysis?.imagery?.heatmap?.ndvi}
-              heatmapBbox={analysis?.imagery?.heatmap?.bbox}
+              heatmapUrls={analysis?.imagery?.heatmap}
               pixels={pixels}
               farmPolygon={farmPolygon}
               farmCenter={farmCenter}

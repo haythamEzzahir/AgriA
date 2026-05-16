@@ -351,24 +351,47 @@ function valueToColor(value, stops) {
   return [0, 0, 0, 0];
 }
 
-async function pixelsToHeatmapPNG(pixels, width, height, indexName) {
+function pointInPolygonRing(lng, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+async function pixelsToHeatmapPNG(pixels, width, height, indexName, bbox, polygonRing) {
   const stops = indexName === 'ndwi' ? NDWI_COLORS : NDVI_COLORS;
   const rgba = Buffer.alloc(width * height * 4);
+  const [minLng, minLat, maxLng, maxLat] = bbox;
+  const lngStep = (maxLng - minLng) / width;
+  const latStep = (maxLat - minLat) / height;
 
-  for (let i = 0; i < width * height; i++) {
-    const raw = pixels[i];
-    let value;
-    if (raw === null || raw === undefined || Number.isNaN(raw)) continue;
-    if (pixels instanceof Float32Array || pixels instanceof Float64Array) {
-      if (raw < -1 || raw > 1) continue;
-      value = raw;
-    } else {
-      if (raw === 0 || raw === 255) continue;
-      value = raw / 127.5 - 1;
+  for (let row = 0; row < height; row++) {
+    const lat = maxLat - (row + 0.5) * latStep;
+    for (let col = 0; col < width; col++) {
+      if (polygonRing) {
+        const lng = minLng + (col + 0.5) * lngStep;
+        if (!pointInPolygonRing(lng, lat, polygonRing)) continue;
+      }
+      const i = row * width + col;
+      const raw = pixels[i];
+      let value;
+      if (raw === null || raw === undefined || Number.isNaN(raw)) continue;
+      if (pixels instanceof Float32Array || pixels instanceof Float64Array) {
+        if (raw < -1 || raw > 1) continue;
+        value = raw;
+      } else {
+        if (raw === 0 || raw === 255) continue;
+        value = raw / 127.5 - 1;
+      }
+      const color = valueToColor(value, stops);
+      const off = i * 4;
+      rgba[off] = color[0]; rgba[off + 1] = color[1]; rgba[off + 2] = color[2]; rgba[off + 3] = color[3];
     }
-    const color = valueToColor(value, stops);
-    const off = i * 4;
-    rgba[off] = color[0]; rgba[off + 1] = color[1]; rgba[off + 2] = color[2]; rgba[off + 3] = color[3];
   }
 
   const pngBuffer = await sharp(rgba, { raw: { width, height, channels: 4 } }).png().toBuffer();
@@ -411,10 +434,14 @@ export async function runPipeline({ farm, language = 'mixed' }) {
     decodeGeoTIFF(ndwiBuffer),
   ]);
 
-  // 3. Generate heatmaps
+  // 3. Generate heatmaps (clipped to polygon)
+  const polygonRing =
+    polygon_geojson.geometry?.coordinates?.[0] ||
+    polygon_geojson.coordinates?.[0] ||
+    null;
   const [ndviHeatmap, ndwiHeatmap] = await Promise.all([
-    pixelsToHeatmapPNG(ndviDecoded.pixels, ndviDecoded.width, ndviDecoded.height, 'ndvi'),
-    pixelsToHeatmapPNG(ndwiDecoded.pixels, ndwiDecoded.width, ndwiDecoded.height, 'ndwi'),
+    pixelsToHeatmapPNG(ndviDecoded.pixels, ndviDecoded.width, ndviDecoded.height, 'ndvi', ndviDecoded.bbox, polygonRing),
+    pixelsToHeatmapPNG(ndwiDecoded.pixels, ndwiDecoded.width, ndwiDecoded.height, 'ndwi', ndwiDecoded.bbox, polygonRing),
   ]);
 
   // 4. Mine valid pixels

@@ -16,7 +16,13 @@ router.post('/signup', async (req, res) => {
   }
 
   try {
-    const { data: authData, error: authError } = await supabaseAnon.auth.signUp({ email, password });
+    // Create user via admin API with email auto-confirmed (avoids email confirmation flow)
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { name },
+    });
     if (authError) return res.status(400).json({ error: authError.message });
 
     if (authData.user) {
@@ -28,7 +34,14 @@ router.post('/signup', async (req, res) => {
       if (dbError) return res.status(500).json({ error: dbError.message });
     }
 
-    res.status(201).json({ user: authData.user, session: authData.session });
+    // Sign in to get a valid session for the client
+    const { data: signInData, error: signInError } = await supabaseAnon.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) return res.status(400).json({ error: signInError.message });
+
+    res.status(201).json({ user: signInData.user, session: signInData.session });
   } catch {
     res.status(503).json({ error: 'Signup service unreachable. Try again later or use demo accounts.' });
   }

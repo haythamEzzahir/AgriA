@@ -73,17 +73,17 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   if (req.isDemo) return res.json({ ...req.body, id: req.params.id, user_id: req.user.id });
 
+  const updates = {};
   const { name, polygon, size, crops, irrigation } = req.body;
+  if (name !== undefined) updates.name = name;
+  if (polygon !== undefined) updates.polygon = polygon;
+  if (size !== undefined) updates.size = size;
+  if (crops !== undefined) updates.crops = crops;
+  if (irrigation !== undefined) updates.irrigation = irrigation;
 
   const { data, error } = await supabase
     .from('farms')
-    .update({
-      name,
-      polygon,
-      size,
-      crops,
-      irrigation,
-    })
+    .update(updates)
     .eq('id', req.params.id)
     .eq('user_id', req.user.id)
     .select()

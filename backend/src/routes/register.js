@@ -12,7 +12,7 @@ router.post('/', requireAuth, async (req, res) => {
 
   // Demo users: skip DB, just return success
   if (req.isDemo) {
-    return res.json({ success: true, demo: true });
+    return res.json({ success: true, demo: true, farmId: 'farm-demo-001' });
   }
 
   // Save personal data if provided
@@ -37,9 +37,10 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   // Save farm data if provided
+  let farmId = null;
   if (size || crops || irrigation) {
     try {
-      const { error: farmError } = await supabase
+      const { data: farmData, error: farmError } = await supabase
         .from('farms')
         .insert({
           user_id: req.user.id,
@@ -49,15 +50,18 @@ router.post('/', requireAuth, async (req, res) => {
           crops: crops || [],
           irrigation: irrigation || null,
           water_access: waterAccess || null,
-        });
+        })
+        .select('id')
+        .single();
 
       if (farmError) return res.status(500).json({ error: farmError.message });
+      farmId = farmData?.id;
     } catch {
       return res.status(503).json({ error: 'Database service unreachable. Please try again later.' });
     }
   }
 
-  res.json({ success: true });
+  res.json({ success: true, farmId });
 });
 
 export default router;
