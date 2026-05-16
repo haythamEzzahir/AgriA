@@ -2,6 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const AuthContext = createContext(null);
 
+const demoSession = {
+  access_token: 'demo-access-token',
+  token_type: 'bearer',
+  user: {
+    id: 'demo-user',
+    name: 'Demo Farmer',
+    email: 'demo@agrosat.local',
+    role: 'farmer',
+    isDemo: true,
+  },
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -33,10 +45,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const continueAsDemo = useCallback(() => {
+    localStorage.setItem('session', JSON.stringify(demoSession));
+    setSession(demoSession);
+    setUser(demoSession.user);
+  }, []);
+
   const isAuthenticated = !!session;
 
   return (
-    <AuthContext.Provider value={{ user, session, login, logout, isAuthenticated, loading }}>
+    <AuthContext.Provider value={{ user, session, login, logout, continueAsDemo, isAuthenticated, loading }}>
       {children}
     </AuthContext.Provider>
   );

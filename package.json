@@ -1,0 +1,26 @@
+{
+  "name": "agricopilot-ai",
+  "version": "1.0.0",
+  "description": "AgriCopilot AI Express API for generating farmer-friendly LLM reports from farm JSON data.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "agriculture",
+    "llm",
+    "express",
+    "deepseek"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

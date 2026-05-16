@@ -1,30 +1,30 @@
 {
-  "name": "agricopilot-frontend",
-  "private": true,
+  "name": "agrosat-frontend",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint src/"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "^2.46.1",
     "globe.gl": "^2.46.0",
     "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
-    "react-router-dom": "^6.30.3"
+    "react-leaflet-draw": "^0.20.4",
+    "react-router-dom": "^6.30.3",
+    "recharts": "^3.8.1",
+    "vite": "^5.4.21"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.12",
-    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
-    "postcss": "^8.4.41",
-    "tailwindcss": "^3.4.10",
-    "vite": "^5.4.21"
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
   }
 }

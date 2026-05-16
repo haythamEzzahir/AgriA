@@ -1,0 +1,19 @@
+{
+  "farm_id": "farm_001",
+  "user_id": "user_ahmed_123",
+  "location": "Oujda, Maroc",
+  "crop_type": "tomate",
+  "language": "darija",
+  "date": "2026-05-14",
+  "satellite": {
+    "ndvi": 0.22,
+    "ndwi": 0.15,
+    "soil_moisture": 0.18,
+    "surface_temp": 38.5
+  },
+  "weather": {
+    "temperature": 39,
+    "humidity": 25,
+    "rain_forecast": "none"
+  }
+}

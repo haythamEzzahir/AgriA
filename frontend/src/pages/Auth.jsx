@@ -6,7 +6,7 @@ import { auth } from '../services/api';
 
 function LoginForm() {
   const { t } = useLanguage();
-  const { login } = useAuth();
+  const { login, continueAsDemo } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,20 +29,34 @@ function LoginForm() {
     }
   };
 
+  const handleDemoAccess = () => {
+    continueAsDemo();
+    navigate('/map', { replace: true });
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      <input type="email" placeholder={t('auth.email')} value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-900 focus:outline-none bg-gray-50 text-sm" required />
-      <input type="password" placeholder={t('auth.password')} value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-900 focus:outline-none bg-gray-50 text-sm" required />
-      <button type="submit" disabled={loading}
-        className="w-full py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition">
-        {loading ? t('auth.loggingIn') : t('auth.signIn')}
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+        <input type="email" placeholder={t('auth.email')} value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-900 focus:outline-none bg-gray-50 text-sm" required />
+        <input type="password" placeholder={t('auth.password')} value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-900 focus:outline-none bg-gray-50 text-sm" required />
+        <button type="submit" disabled={loading}
+          className="w-full py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition">
+          {loading ? t('auth.loggingIn') : t('auth.signIn')}
+        </button>
+      </form>
+      <button
+        type="button"
+        onClick={handleDemoAccess}
+        className="w-full py-2.5 border border-emerald-200 bg-emerald-50 text-emerald-800 rounded-xl text-sm font-semibold hover:bg-emerald-100 transition"
+      >
+        Continue as Demo
       </button>
-    </form>
+    </div>
   );
 }
 

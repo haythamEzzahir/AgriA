@@ -1,9 +1,11 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 
 export default function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
+  const { pathname } = useLocation();
+  const allowDevelopmentMapAccess = import.meta.env.DEV && pathname === '/map';
 
   if (loading) {
     return (
@@ -13,7 +15,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !allowDevelopmentMapAccess) {
     return <Navigate to="/auth" replace />;
   }
 

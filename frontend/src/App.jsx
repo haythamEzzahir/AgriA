@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Layout/Navbar';
 import LandingPage from './pages/LandingPage';
@@ -37,6 +37,7 @@ export default function App() {
         </ProtectedRoute>
       } />
       <Route path="/community" element={<Community />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
