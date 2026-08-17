@@ -2,6 +2,8 @@
 
 > **An AI-powered agricultural assistant helping farmers make smarter irrigation and crop-management decisions using satellite imagery, weather data, and multilingual AI.**
 
+🔗 **Live Demo:** [https://agri-a-puce.vercel.app](https://agri-a-puce.vercel.app)
+
 AgriA is a smart agriculture platform designed to transform complex agricultural and satellite data into **simple, actionable recommendations for farmers**.
 
 The platform combines **satellite imagery, weather conditions, AI-generated insights, interactive maps, and multilingual communication** to help farmers monitor their fields, detect potential water stress, and make better irrigation decisions.
